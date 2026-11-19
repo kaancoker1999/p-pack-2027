@@ -1,0 +1,117 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-ink: #050505;
+  --color-coal: #0d0d0d;
+  --color-blood: #8b0000;
+  --color-crimson: #c1121f;
+  --color-gold: #d4af37;
+  --color-gold-soft: #f1dc93;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-playfair), Georgia, serif;
+  --font-logo: var(--font-cinzel), var(--font-playfair), Georgia, serif;
+}
+
+html {
+  background: #050505;
+  color-scheme: dark;
+  scroll-behavior: smooth;
+}
+body {
+  @apply bg-ink text-white font-sans antialiased;
+}
+::selection {
+  background: #c1121f;
+  color: #fff;
+}
+
+@layer components {
+  .gold-text {
+    background: linear-gradient(180deg, #f6e7a8 0%, #d4af37 45%, #9a7b1c 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .btn,
+  .btn-primary,
+  .btn-gold,
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold tracking-wide transition duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply bg-crimson text-white shadow-[0_8px_30px_rgba(193,18,31,0.35)] hover:bg-[#d81524] active:scale-[0.98];
+  }
+  .btn-gold {
+    @apply border border-gold/70 text-gold hover:bg-gold/10;
+  }
+  .btn-ghost {
+    @apply border border-white/15 text-white/80 hover:border-white/40 hover:text-white;
+  }
+  .card {
+    @apply rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm;
+  }
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.35em] text-gold;
+  }
+  .section-title {
+    @apply mt-3 font-display text-3xl font-bold leading-tight text-white sm:text-5xl;
+  }
+  .field {
+    @apply w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-base text-white placeholder:text-white/30 outline-none transition focus:border-gold focus:ring-1 focus:ring-gold;
+  }
+  .field-error {
+    @apply border-crimson focus:border-crimson focus:ring-crimson;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-white/80;
+  }
+}
+
+/* Süzülen altın parıltılar (video üstünde, hafif) */
+@keyframes sparkle-rise {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate3d(var(--drift, 20px), -105vh, 0) scale(1);
+    opacity: 0;
+  }
+}
+.sparkle {
+  position: absolute;
+  bottom: -12px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, #fff3c4 0%, #d4af37 45%, rgba(212, 175, 55, 0) 70%);
+  animation: sparkle-rise linear infinite;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .sparkle {
+    display: none;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  html,
+  body {
+    background: #fff !important;
+  }
+}
