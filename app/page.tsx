@@ -60,7 +60,7 @@ export default async function HomePage() {
       <Header t={t} locale={locale} />
       <main>
         {/* HERO */}
-        <section className="relative flex min-h-svh flex-col items-center justify-center px-4 pb-20 pt-24 text-center">
+        <section className="relative flex min-h-svh flex-col items-center justify-center px-4 pb-32 pt-24 text-center sm:pb-44">
           <HeroVideo />
           <div className="relative z-10 mx-auto w-full max-w-4xl">
             <p className="eyebrow">{t.hero.eyebrow}</p>
