@@ -142,6 +142,7 @@ export const tr = {
     receiptType: 'Dekont JPG, PNG, WEBP, HEIC veya PDF olmalı.',
     receiptSize: 'Dekont dosyası en fazla {mb} MB olabilir.',
     token: 'Oturumun süresi doldu. Lütfen formu yeniden gönderin.',
+    preview: 'Bu bir önizleme: bilet satışı henüz açılmadı. Çok yakında!',
   },
   order: {
     title: 'Sipariş durumu',

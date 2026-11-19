@@ -14,6 +14,8 @@ export const runtime = 'nodejs';
  */
 export async function POST(req: Request) {
   if (!sameOrigin(req)) return fail('forbidden', 403);
+  // Önizleme yayını: veritabanı bağlanmadan satış açılmaz.
+  if (!process.env.DATABASE_URL) return fail('preview', 503);
   if (!(await rateLimit('prepare', req, 20, 600))) return fail('rate_limit', 429);
 
   const parsed = await parseJson(req, checkoutSchema);

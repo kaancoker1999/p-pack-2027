@@ -144,6 +144,7 @@ export const en: Dict = {
     receiptType: 'The receipt must be a JPG, PNG, WEBP, HEIC or PDF.',
     receiptSize: 'The receipt file can be at most {mb} MB.',
     token: 'Your session expired. Please submit the form again.',
+    preview: 'This is a preview: ticket sales are not open yet. Coming very soon!',
   },
   order: {
     title: 'Order status',

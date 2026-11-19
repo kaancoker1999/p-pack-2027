@@ -21,8 +21,8 @@ export default async function OrderPage({ params }: { params: Promise<{ referenc
   const { t, locale } = await getI18n();
   const reference = decodeURIComponent((await params).reference).trim().toUpperCase();
   const h = await headers();
-  const allowed = await rateLimit('order-status', new Request('http://local', { headers: h }), 40, 600);
-  const order = allowed && REFERENCE_RE.test(reference) ? await getOrderByReference(reference) : null;
+  const allowed = await rateLimit('order-status', new Request('http://local', { headers: h }), 40, 600).catch(() => true);
+  const order = allowed && REFERENCE_RE.test(reference) ? await getOrderByReference(reference).catch(() => null) : null;
 
   const badge = {
     PAYMENT_SUBMITTED: 'border-gold text-gold',

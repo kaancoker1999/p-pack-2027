@@ -17,7 +17,8 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function TicketsPage() {
   const { t, locale } = await getI18n();
   const tier = tierAt(new Date());
-  const remaining = tier ? await remainingCapacity() : 0;
+  // Veritabanı bağlı değilken (önizleme yayını) form yine de görünsün.
+  const remaining = tier ? await remainingCapacity().catch(() => event.capacity) : 0;
   const unavailable = !tier
     ? { title: t.flow.closedTitle, text: t.flow.closedText }
     : remaining <= 0

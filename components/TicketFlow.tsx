@@ -141,6 +141,8 @@ export default function TicketFlow({ t, locale, remaining, prices, revolutUrl, r
         return fmt(t.errors.receiptSize, { mb: receiptMaxMb });
       case 'token':
         return t.errors.token;
+      case 'preview':
+        return t.errors.preview;
       default:
         return t.errors.generic;
     }
