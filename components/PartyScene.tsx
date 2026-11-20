@@ -196,11 +196,11 @@ function DonerStand() {
   );
 }
 
-export default function PartyScene() {
+export default function PartyScene({ className = 'h-56 sm:h-64 lg:h-72' }: { className?: string }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-[#1a0204] via-[#120103] to-black">
+    <div className="overflow-hidden bg-gradient-to-b from-[#1a0204] via-[#120103] to-black">
       {/* Dar ekranda sahnenin ortası (usta + yanındakiler) görünür, geniş ekranda tamamı. */}
-      <svg viewBox="0 0 900 240" preserveAspectRatio="xMidYMax slice" className="block h-56 w-full sm:h-64 lg:h-72" aria-hidden="true">
+      <svg viewBox="0 0 900 240" preserveAspectRatio="xMidYMax slice" className={`block w-full ${className}`} aria-hidden="true">
         <defs>
           <radialGradient id="floor-glow" cx="0.5" cy="0.5" r="0.5">
             <stop offset="0" stopColor={RED} stopOpacity="0.5" />

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Fragment } from 'react';
 import { event } from '@/config/event';
 import { fmt } from '@/i18n';
 import { getI18n } from '@/i18n/server';
@@ -101,17 +102,31 @@ export default async function HomePage() {
             <p className="eyebrow">{t.night.eyebrow}</p>
             <h2 className="section-title">{t.night.title}</h2>
           </Reveal>
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
+          <div className="mt-10 grid gap-4 md:grid-cols-2">
             {highlights.map((h, i) => (
-              <Reveal key={h.title} delay={i * 0.08}>
-                <div className="card h-full">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full border border-gold/40 text-gold">
-                    <Icon d={h.icon} />
+              <Fragment key={h.title}>
+                <Reveal delay={Math.min(i + (i > 0 ? 1 : 0), 3) * 0.08}>
+                  <div className="card h-full">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-gold/40 text-gold">
+                      <Icon d={h.icon} />
+                    </div>
+                    <h3 className="mt-5 font-display text-xl font-bold">{h.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-white/70">{h.text}</p>
                   </div>
-                  <h3 className="mt-5 font-display text-xl font-bold">{h.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-white/70">{h.text}</p>
-                </div>
-              </Reveal>
+                </Reveal>
+                {/* 2. sırada: dans pistinin ortasındaki dönerci */}
+                {i === 0 && (
+                  <Reveal delay={0.08}>
+                    <div className="h-full overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
+                      <PartyScene className="h-44 sm:h-48" />
+                      <div className="p-6 pt-5">
+                        <h3 className="font-display text-xl font-bold">{t.night.donerTitle}</h3>
+                        <p className="mt-2 text-sm leading-relaxed text-white/70">{t.night.donerText}</p>
+                      </div>
+                    </div>
+                  </Reveal>
+                )}
+              </Fragment>
             ))}
           </div>
         </section>
@@ -124,11 +139,7 @@ export default async function HomePage() {
             <p className="mt-3 max-w-2xl text-white/70">{t.pricing.subtitle}</p>
           </Reveal>
 
-          <Reveal delay={0.05} className="mt-10">
-            <PartyScene />
-          </Reveal>
-
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
             {event.priceTiers.map((tier, i) => {
               const isCurrent = current?.id === tier.id;
               const isPast = !isCurrent && now.getTime() >= new Date(tier.until).getTime();

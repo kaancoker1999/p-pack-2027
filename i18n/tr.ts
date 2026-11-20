@@ -25,6 +25,8 @@ export const tr = {
     openBarText: 'Bütün gece sınırsız içki biletine dahil. Barda ayrıca ödeme yok.',
     djTitle: 'DJ’ler',
     djText: 'Birden fazla DJ, 22:00’den gün doğana kadar kesintisiz müzik.',
+    donerTitle: 'Gece Dönercisi',
+    donerText: 'Dans pistinin tam ortasında döner ustası. Acıkan sıraya.',
     ageTitle: '18+ Etkinlik',
     ageText: 'Girişte kimlik kontrolü yapılır. Kimliğini yanında getirmeyi unutma.',
     dressTitle: 'Dress Code: Elegant',

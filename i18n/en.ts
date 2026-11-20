@@ -27,6 +27,8 @@ export const en: Dict = {
     openBarText: 'Unlimited drinks all night are included in your ticket. Nothing to pay at the bar.',
     djTitle: 'DJs',
     djText: 'Multiple DJs and non-stop music from 22:00 until sunrise.',
+    donerTitle: 'Late-Night Döner',
+    donerText: 'A döner master right in the middle of the dance floor.',
     ageTitle: '18+ Event',
     ageText: 'IDs are checked at the door. Don’t forget to bring yours.',
     dressTitle: 'Dress Code: Elegant',
