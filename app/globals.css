@@ -313,3 +313,117 @@ body {
 .disco-twinkle {
   animation: disco-twinkle 0.5s ease-in-out infinite alternate;
 }
+
+/* Gece sahneleri: open bar, DJ, elegant */
+@keyframes bar-shake {
+  from {
+    transform: rotate(-7deg) translateY(-2px);
+  }
+  to {
+    transform: rotate(7deg) translateY(2px);
+  }
+}
+@keyframes bar-bubble {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-24px);
+    opacity: 0;
+  }
+}
+@keyframes dj-eq {
+  from {
+    transform: scaleY(0.18);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+@keyframes dj-spin {
+  to {
+    stroke-dashoffset: -124;
+  }
+}
+@keyframes dj-speaker {
+  from {
+    transform: scale(0.9);
+  }
+  to {
+    transform: scale(1.08);
+  }
+}
+@keyframes dj-bob {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-4px);
+  }
+}
+@keyframes dj-note {
+  0% {
+    transform: translate(0, 10px) rotate(-8deg);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(8px, -34px) rotate(10deg);
+    opacity: 0;
+  }
+}
+@keyframes el-waltz {
+  from {
+    transform: rotate(-4deg) translateX(-7px);
+  }
+  to {
+    transform: rotate(4deg) translateX(7px);
+  }
+}
+@keyframes el-chandelier {
+  from {
+    transform: rotate(-2.5deg);
+  }
+  to {
+    transform: rotate(2.5deg);
+  }
+}
+.bar-shake {
+  animation: bar-shake 0.13s ease-in-out infinite alternate;
+}
+.bar-bubble {
+  animation: bar-bubble 2s ease-out infinite;
+}
+.dj-eq {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: dj-eq 0.4s ease-in-out infinite alternate;
+}
+.dj-spin {
+  animation: dj-spin 0.9s linear infinite;
+}
+.dj-speaker {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: dj-speaker 0.21s ease-in-out infinite alternate;
+}
+.dj-bob {
+  animation: dj-bob 0.42s ease-in-out infinite alternate;
+}
+.dj-note {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: dj-note 2.4s ease-out infinite;
+}
+.el-waltz {
+  animation: el-waltz 1.6s ease-in-out infinite alternate;
+}
+.el-chandelier {
+  animation: el-chandelier 2.8s ease-in-out infinite alternate;
+}

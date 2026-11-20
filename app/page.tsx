@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { Fragment } from 'react';
 import { event } from '@/config/event';
 import { fmt } from '@/i18n';
 import { getI18n } from '@/i18n/server';
@@ -7,6 +6,7 @@ import Countdown, { InlineCountdown } from '@/components/Countdown';
 import Footer from '@/components/Footer';
 import Header from '@/components/Header';
 import HeroVideo from '@/components/HeroVideo';
+import { DjScene, ElegantScene, OpenBarScene } from '@/components/NightScenes';
 import PartyScene from '@/components/PartyScene';
 import Reveal from '@/components/Reveal';
 import { remainingCapacity } from '@/lib/orders';
@@ -24,21 +24,6 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-const icons = {
-  bar: 'M8 22h8M12 15v7M5 3h14l-1.2 6.2A6 6 0 0 1 12 14a6 6 0 0 1-5.8-4.8L5 3zM6 8h12',
-  dj: 'M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm12-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0z',
-  id: 'M3 5h18v14H3zM7 15h4M7 11h4M15 10a1.5 1.5 0 1 0 0-.01M13 15a2.5 2.5 0 0 1 5 0',
-  dress: 'M12 3l2.5 4L12 9 9.5 7 12 3zM12 9l6 12H6l6-12z',
-};
-
-function Icon({ d }: { d: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d={d} />
-    </svg>
-  );
-}
-
 export default async function HomePage() {
   const { t, locale } = await getI18n();
   const now = new Date();
@@ -50,10 +35,12 @@ export default async function HomePage() {
   const countdownLabels = { days: t.hero.days, hours: t.hero.hours, minutes: t.hero.minutes, seconds: t.hero.seconds };
   const eventDate = formatEventDate(locale);
 
+  // "Gece neler var" kartları: her birinin kendi hareketli görseli var.
   const highlights = [
-    { icon: icons.bar, title: t.night.openBarTitle, text: t.night.openBarText },
-    { icon: icons.dj, title: t.night.djTitle, text: t.night.djText },
-    { icon: icons.dress, title: t.night.dressTitle, text: t.night.dressText },
+    { scene: <OpenBarScene />, title: t.night.openBarTitle, text: t.night.openBarText },
+    { scene: <PartyScene className="h-44 sm:h-48" />, title: t.night.donerTitle, text: t.night.donerText },
+    { scene: <DjScene />, title: t.night.djTitle, text: t.night.djText },
+    { scene: <ElegantScene />, title: t.night.dressTitle, text: t.night.dressText },
   ];
 
   return (
@@ -104,29 +91,15 @@ export default async function HomePage() {
           </Reveal>
           <div className="mt-10 grid gap-4 md:grid-cols-2">
             {highlights.map((h, i) => (
-              <Fragment key={h.title}>
-                <Reveal delay={Math.min(i + (i > 0 ? 1 : 0), 3) * 0.08}>
-                  <div className="card h-full">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-gold/40 text-gold">
-                      <Icon d={h.icon} />
-                    </div>
-                    <h3 className="mt-5 font-display text-xl font-bold">{h.title}</h3>
+              <Reveal key={h.title} delay={i * 0.08}>
+                <div className="h-full overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
+                  {h.scene}
+                  <div className="p-6 pt-5">
+                    <h3 className="font-display text-xl font-bold">{h.title}</h3>
                     <p className="mt-2 text-sm leading-relaxed text-white/70">{h.text}</p>
                   </div>
-                </Reveal>
-                {/* 2. sırada: dans pistinin ortasındaki dönerci */}
-                {i === 0 && (
-                  <Reveal delay={0.08}>
-                    <div className="h-full overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
-                      <PartyScene className="h-44 sm:h-48" />
-                      <div className="p-6 pt-5">
-                        <h3 className="font-display text-xl font-bold">{t.night.donerTitle}</h3>
-                        <p className="mt-2 text-sm leading-relaxed text-white/70">{t.night.donerText}</p>
-                      </div>
-                    </div>
-                  </Reveal>
-                )}
-              </Fragment>
+                </div>
+              </Reveal>
             ))}
           </div>
         </section>
