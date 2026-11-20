@@ -51,7 +51,6 @@ export default async function HomePage() {
   const highlights = [
     { icon: icons.bar, title: t.night.openBarTitle, text: t.night.openBarText },
     { icon: icons.dj, title: t.night.djTitle, text: t.night.djText },
-    { icon: icons.id, title: t.night.ageTitle, text: t.night.ageText },
     { icon: icons.dress, title: t.night.dressTitle, text: t.night.dressText },
   ];
 
@@ -65,8 +64,8 @@ export default async function HomePage() {
           <div className="relative z-10 mx-auto w-full max-w-4xl">
             <p className="eyebrow">{t.hero.eyebrow}</p>
             <h1 className="mt-4 font-logo font-bold leading-none">
-              <span className="gold-text block text-[19vw] tracking-[0.06em] sm:text-9xl">P-PACK</span>
-              <span className="mt-1 block text-[13vw] tracking-[0.3em] text-white sm:text-7xl">2027</span>
+              <span className="gold-text block text-[15.5vw] tracking-[0.04em] sm:text-8xl lg:text-9xl">{event.logo.top}</span>
+              <span className="mt-1 block text-[13vw] tracking-[0.3em] text-white sm:text-7xl">{event.logo.bottom}</span>
             </h1>
             <p className="mt-6 text-base font-medium text-white sm:text-xl">
               {eventDate} · {formatEventTime()} – {t.hero.untilMorning}
@@ -101,7 +100,7 @@ export default async function HomePage() {
             <p className="eyebrow">{t.night.eyebrow}</p>
             <h2 className="section-title">{t.night.title}</h2>
           </Reveal>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
             {highlights.map((h, i) => (
               <Reveal key={h.title} delay={i * 0.08}>
                 <div className="card h-full">
@@ -176,7 +175,8 @@ export default async function HomePage() {
                     >
                       {isCurrent ? t.pricing.current : isPast ? t.pricing.past : t.pricing.upcoming}
                     </span>
-                    <p className="mt-4 text-sm text-white/70">{period}</p>
+                    <p className="mt-4 font-display text-2xl font-bold text-white">{tier.label}</p>
+                    <p className="mt-1 text-sm text-white/70">{period}</p>
                     <p className={`mt-3 font-display text-5xl font-bold ${isPast ? 'line-through decoration-1' : ''}`}>
                       {formatMoney(tier.TRY, 'TRY', locale)}
                     </p>

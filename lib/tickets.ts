@@ -22,7 +22,7 @@ export function verifyTicketSignature(id: string, signature: string): boolean {
   return safeEqual(signTicket(id), signature.toUpperCase());
 }
 
-/** QR içeriği: PP27.<id>.<imzanın ilk 128 biti> — büyük harf, QR'ın kompakt alfanümerik modu için. */
+/** QR içeriği: IST27.<id>.<imzanın ilk 128 biti> — büyük harf, QR'ın kompakt alfanümerik modu için. */
 export function qrPayload(id: string, signature: string): string {
   return `${event.codePrefix}.${id}.${signature.slice(0, 32)}`;
 }
@@ -43,7 +43,7 @@ export type ParsedCode = { kind: 'id'; id: string } | { kind: 'prefix'; prefix: 
 export function parseScannedCode(raw: string): ParsedCode {
   const s = raw.trim().toUpperCase();
 
-  // 1) QR: PP27.<id>.<imza>
+  // 1) QR: IST27.<id>.<imza>
   const qr = s.match(new RegExp(`^${event.codePrefix}\\.([0-9A-F]{32})\\.([0-9A-F]{32})$`));
   if (qr) {
     return safeEqual(signTicket(qr[1]).slice(0, 32), qr[2]) ? { kind: 'id', id: qr[1] } : { kind: 'invalid' };

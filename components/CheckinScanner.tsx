@@ -149,7 +149,7 @@ export default function CheckinScanner({ initial, isAdmin }: { initial: Counts; 
     <main className="mx-auto flex min-h-svh max-w-md flex-col px-4 pb-8 pt-4">
       <header className="flex items-center justify-between">
         <div>
-          <p className="font-logo text-lg font-bold tracking-[0.2em] text-gold">P-PACK 2027</p>
+          <p className="font-logo text-lg font-bold tracking-[0.2em] text-gold">Istanbul 2027</p>
           <p className="text-xs text-white/50">Kapı · bilet okutma</p>
         </div>
         <div className="rounded-2xl border border-gold/50 px-4 py-2 text-right" aria-live="polite">

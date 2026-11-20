@@ -2,7 +2,7 @@ import type { Dict } from './tr';
 
 export const en: Dict = {
   meta: {
-    title: 'P-PACK 2027 — New Year’s Eve Party · Vaniköy, Istanbul',
+    title: 'Istanbul 2027 — New Year’s Eve Party · Vaniköy, Istanbul',
     description:
       '31 December 2026 at Vaniköy Evleri. Unlimited open bar, DJs and a New Year’s Eve that runs until morning. Get your ticket now.',
   },
@@ -29,8 +29,8 @@ export const en: Dict = {
     djText: 'Multiple DJs and non-stop music from 22:00 until sunrise.',
     ageTitle: '18+ Event',
     ageText: 'IDs are checked at the door. Don’t forget to bring yours.',
-    dressTitle: 'No Dress Code',
-    dressText: 'Come as you are. The only rule: have a great time.',
+    dressTitle: 'Dress Code: Elegant',
+    dressText: 'Dress for the last night of the year. Evening wear, suits and sparkle welcome.',
   },
   lineup: {
     eyebrow: 'Line-up',
@@ -165,7 +165,7 @@ export const en: Dict = {
     guests: 'Guests',
     help: 'Questions? Write to us:',
     lookupTitle: 'Track your order',
-    lookupPh: 'PP27-XXXXX',
+    lookupPh: 'IST27-XXXXX',
     lookupBtn: 'Look up',
   },
   ticket: {
@@ -223,7 +223,7 @@ export const en: Dict = {
     sections: [
       {
         h: 'Data controller',
-        p: 'Your personal data is processed by the organisers of P-PACK 2027 under Turkish Personal Data Protection Law No. 6698 (“KVKK”). Contact: {email}',
+        p: 'Your personal data is processed by the organisers of Istanbul 2027 under Turkish Personal Data Protection Law No. 6698 (“KVKK”). Contact: {email}',
       },
       {
         h: 'Data we process',

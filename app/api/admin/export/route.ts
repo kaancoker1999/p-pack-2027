@@ -30,7 +30,7 @@ export const GET = adminRoute(async (_req, session) => {
   return new Response('﻿' + lines.join('\r\n'), {
     headers: {
       'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': 'attachment; filename="p-pack-2027-misafir-listesi.csv"',
+      'Content-Disposition': 'attachment; filename="istanbul-2027-misafir-listesi.csv"',
       'Cache-Control': 'no-store',
     },
   });

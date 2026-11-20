@@ -49,7 +49,7 @@ check('kapasiteyi aşan sipariş reddedilir', [400, 409].includes(tooMany.status
 
 step('2. Ödeme ekranı: referans + tutar (veritabanına yazılmadan)');
 const prep = await (await post('/api/checkout/prepare', base)).json();
-check('referans biçimi PP27-XXXXX', /^PP27-[2-9A-HJKMNP-Z]{5}$/.test(prep.reference ?? ''), prep.reference);
+check('referans biçimi IST27-XXXXX', /^IST27-[2-9A-HJKMNP-Z]{5}$/.test(prep.reference ?? ''), prep.reference);
 check('toplam = 3 × güncel fiyat', prep.total === 3 * prep.unitPrice && prep.quantity === 3, JSON.stringify(prep));
 console.log(`     referans ${prep.reference}, tutar ${prep.total} ${prep.currency} (${prep.tier})`);
 const before = await (await fetch(`${BASE}/order/${prep.reference}`)).text();
@@ -64,7 +64,7 @@ const submit = async (payload, file, type = 'image/png') => {
   return fetch(`${BASE}/api/orders`, { method: 'POST', body: fd });
 };
 const full = { ...base, reference: prep.reference, token: prep.token };
-check('sahte referans jetonu reddedilir', (await submit({ ...full, reference: 'PP27-AAAAA' }, null)).status === 400);
+check('sahte referans jetonu reddedilir', (await submit({ ...full, reference: 'IST27-AAAAA' }, null)).status === 400);
 check('resim olmayan dekont reddedilir', (await submit(full, Buffer.from('<script>alert(1)</script>'.repeat(4)))).status === 400);
 check('4 MB üstü dekont reddedilir', (await submit(full, Buffer.concat([PNG, Buffer.alloc(4.2 * 1024 * 1024)]))).status === 400);
 check('reddedilen denemeler sipariş oluşturmadı', (await (await fetch(`${BASE}/order/${prep.reference}`)).text()).includes('bulunamadı'));
@@ -123,7 +123,7 @@ check('/order/[referans] "Onaylandı" gösterir', (await (await fetch(`${BASE}/o
 step('7. Bilet sayfası, QR görseli, PDF');
 const [idKaan, idAyse, idMehmet] = guests.map((g) => ticketIds[g.email]);
 const page = await (await fetch(`${BASE}/ticket/${idKaan}`)).text();
-check('bilet sayfası: isim, @instagram, 18+ notu, QR ve barkod', ['Kaan Çoker', 'kaan.test', 'kimlik getirin', 'P-PACK 2027'].every((x) => page.includes(x)) && (page.match(/<svg/g) ?? []).length >= 2);
+check('bilet sayfası: isim, @instagram, 18+ notu, QR ve barkod', ['Kaan Çoker', 'kaan.test', 'kimlik getirin', 'Istanbul 2027'].every((x) => page.includes(x)) && (page.match(/<svg/g) ?? []).length >= 2);
 const qr = await fetch(`${BASE}/api/ticket/${idKaan}/qr`);
 check('QR PNG', qr.status === 200 && qr.headers.get('content-type') === 'image/png');
 const pdf = await fetch(`${BASE}/api/ticket/${idKaan}/pdf`);
@@ -142,7 +142,7 @@ check('"bileti tekrar gönder" çalışır', (await post(`/api/admin/tickets/${i
 
 step('9. Kapıda okutma');
 const sig = (id) => createHmac('sha256', env.TICKET_SECRET).update(id).digest('hex').toUpperCase();
-const qrCode = (id) => `PP27.${id}.${sig(id).slice(0, 32)}`;
+const qrCode = (id) => `IST27.${id}.${sig(id).slice(0, 32)}`;
 const barcode = (id) => BigInt(`0x${id}`).toString().padStart(40, '0');
 check('girişsiz okutma → 401', (await post('/api/checkin/scan', { code: qrCode(renamed.id) })).status === 401);
 check('yanlış kapı şifresi → 401', (await post('/api/checkin/login', { password: 'yanlis' })).status === 401);
@@ -160,9 +160,9 @@ const viaBarcode = await scan(barcode(renamed.id));
 check('aynı bilet barkodla da reddedilir', viaBarcode.result === 'ALREADY_USED');
 const old = await scan(qrCode(idAyse));
 check('isim değişikliğiyle iptal edilen eski bilet: GEÇERSİZ', old.result === 'INVALID' && old.reason === 'cancelled', JSON.stringify(old));
-const forged = await scan(`PP27.${idKaan}.${'A'.repeat(32)}`);
+const forged = await scan(`IST27.${idKaan}.${'A'.repeat(32)}`);
 check('sahte imzalı QR: GEÇERSİZ', forged.result === 'INVALID');
-check('uydurma kod: GEÇERSİZ', (await scan('PP27.' + 'F'.repeat(32) + '.' + sig('F'.repeat(32)).slice(0, 32))).result === 'INVALID');
+check('uydurma kod: GEÇERSİZ', (await scan('IST27.' + 'F'.repeat(32) + '.' + sig('F'.repeat(32)).slice(0, 32))).result === 'INVALID');
 
 const race = await Promise.all(Array.from({ length: 6 }, () => scan(barcode(idMehmet))));
 check('aynı anda 6 okutma: yalnızca 1 tanesi GEÇERLİ (atomik)', race.filter((r) => r.result === 'VALID').length === 1 && race.filter((r) => r.result === 'ALREADY_USED').length === 5, race.map((r) => r.result).join(','));

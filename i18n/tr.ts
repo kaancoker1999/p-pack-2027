@@ -1,6 +1,6 @@
 export const tr = {
   meta: {
-    title: 'P-PACK 2027 — Yılbaşı Partisi · Vaniköy, İstanbul',
+    title: 'Istanbul 2027 — Yılbaşı Partisi · Vaniköy, İstanbul',
     description:
       '31 Aralık 2026, Vaniköy Evleri. Sınırsız open bar, DJ’ler ve sabaha kadar süren bir yılbaşı gecesi. Biletini şimdi al.',
   },
@@ -27,8 +27,8 @@ export const tr = {
     djText: 'Birden fazla DJ, 22:00’den gün doğana kadar kesintisiz müzik.',
     ageTitle: '18+ Etkinlik',
     ageText: 'Girişte kimlik kontrolü yapılır. Kimliğini yanında getirmeyi unutma.',
-    dressTitle: 'Dress Code Yok',
-    dressText: 'Nasıl rahat ediyorsan öyle gel. Tek kural: iyi eğlenmek.',
+    dressTitle: 'Dress Code: Elegant',
+    dressText: 'Yılın son gecesine yakışır şıklıkta gel. Gece kıyafetleri, takımlar, ışıltı serbest.',
   },
   lineup: {
     eyebrow: 'Line-up',
@@ -163,7 +163,7 @@ export const tr = {
     guests: 'Misafirler',
     help: 'Sorunuz mu var? Bize yazın:',
     lookupTitle: 'Siparişini takip et',
-    lookupPh: 'PP27-XXXXX',
+    lookupPh: 'IST27-XXXXX',
     lookupBtn: 'Sorgula',
   },
   ticket: {
@@ -221,7 +221,7 @@ export const tr = {
     sections: [
       {
         h: 'Veri sorumlusu',
-        p: 'Kişisel verileriniz, P-PACK 2027 etkinliğinin organizatörleri tarafından 6698 sayılı Kişisel Verilerin Korunması Kanunu (“KVKK”) kapsamında işlenmektedir. İletişim: {email}',
+        p: 'Kişisel verileriniz, Istanbul 2027 etkinliğinin organizatörleri tarafından 6698 sayılı Kişisel Verilerin Korunması Kanunu (“KVKK”) kapsamında işlenmektedir. İletişim: {email}',
       },
       {
         h: 'İşlenen veriler',

@@ -219,7 +219,7 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
     <div className="mx-auto max-w-7xl px-4 pb-24 pt-6 sm:px-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="font-logo text-xl font-bold tracking-[0.2em] text-gold">P-PACK 2027</p>
+          <p className="font-logo text-xl font-bold tracking-[0.2em] text-gold">Istanbul 2027</p>
           <p className="text-xs text-white/50">Admin paneli · {data.user}</p>
         </div>
         <div className="flex flex-wrap gap-2 text-sm">

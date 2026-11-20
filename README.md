@@ -1,4 +1,4 @@
-# P-PACK 2027 — bilet satış sitesi
+# Istanbul 2027 — bilet satış sitesi (eski adıyla P-PACK 2027)
 
 Yılbaşı partisi için bilet satışı, Revolut ile ödeme bildirimi, admin onayı, QR/barkodlu bilet ve kapıda okutma.
 
@@ -8,7 +8,7 @@ Yılbaşı partisi için bilet satışı, Revolut ile ödeme bildirimi, admin on
 |---|---|
 | `/` | Tanıtım: video hero, geri sayım, line-up, fiyat dönemleri, mekan |
 | `/tickets` | Bilet alma akışı (bilgiler → ödeme → bildirim) |
-| `/order/PP27-XXXXX` | Sipariş durumu takibi |
+| `/order/IST27-XXXXX` | Sipariş durumu takibi |
 | `/ticket/<id>` | Misafirin bileti (QR + Code128 barkod, PDF) |
 | `/admin` | Admin paneli (onay, ret, isim değişikliği, davetli bileti, CSV, işlem kaydı) |
 | `/checkin` | Kapıda bilet okutma (ayrı personel şifresi) |
@@ -146,10 +146,10 @@ npm run hash-password -- "kapi-sifresi"
 
 ## 8. Nasıl çalışır
 
-- **Sipariş:** Form gönderilince sunucu bir referans kodu (`PP27-7K3QX`, kriptografik rastgele) üretir ama **veritabanına hiçbir şey yazmaz**. Kayıt ancak "Ödemeyi yaptım" ile `PAYMENT_SUBMITTED` olarak açılır; sipariş sahibine ve adminlere e-posta gider.
+- **Sipariş:** Form gönderilince sunucu bir referans kodu (`IST27-7K3QX`, kriptografik rastgele) üretir ama **veritabanına hiçbir şey yazmaz**. Kayıt ancak "Ödemeyi yaptım" ile `PAYMENT_SUBMITTED` olarak açılır; sipariş sahibine ve adminlere e-posta gider.
 - **Kapasite:** Kontrol, advisory lock altında tek transaction içinde yapılır. Onay bekleyen siparişler de kapasiteden düşer; reddedilenler geri açılır.
 - **48 saat:** Süreyi aşan bekleyen siparişler admin panelinde kırmızı görünür; otomatik iptal yoktur.
-- **Bilet:** Kimlik 128 bit rastgeledir ve `TICKET_SECRET` ile HMAC-SHA256 imzası taşır. QR içeriği `PP27.<kimlik>.<imza>`; barkod, kimliğin 40 haneli ondalık halidir (Code128).
+- **Bilet:** Kimlik 128 bit rastgeledir ve `TICKET_SECRET` ile HMAC-SHA256 imzası taşır. QR içeriği `IST27.<kimlik>.<imza>`; barkod, kimliğin 40 haneli ondalık halidir (Code128).
 - **İsim değişikliği:** Eski bilet `CANCELLED` olur, yeni kimlik + yeni QR ile yeni bilet gönderilir.
 - **Check-in:** `UPDATE … WHERE status = 'VALID'` ile atomik; aynı bilet iki cihazda aynı anda okutulsa bile yalnızca biri kabul edilir.
 - **Güvenlik:** Tüm API girdileri zod ile doğrulanır; formlarda Postgres tabanlı rate limit ve honeypot vardır; dekontun türü dosya içeriğinden kontrol edilir (JPG/PNG/WEBP/HEIC/PDF, en fazla 4 MB) ve özel bucket'ta saklanır; admin/check-in rotaları hem middleware'de hem rota içinde korunur; oturum httpOnly çerezdir.

@@ -6,7 +6,7 @@ import { secret } from './env';
 const ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
 const TOKEN_TTL_MS = 7 * 24 * 3600 * 1000;
 
-/** Tahmin edilemez referans kodu, ör. PP27-7K3QX (kriptografik rastgele). */
+/** Tahmin edilemez referans kodu, ör. IST27-7K3QX (kriptografik rastgele). */
 export function newReference(): string {
   let s = '';
   for (let i = 0; i < 5; i++) s += ALPHABET[randomInt(ALPHABET.length)];

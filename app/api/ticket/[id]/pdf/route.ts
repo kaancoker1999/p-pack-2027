@@ -12,7 +12,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   return new Response(new Uint8Array(pdf), {
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="P-PACK-2027-${ticket.id.slice(0, 8)}.pdf"`,
+      'Content-Disposition': `attachment; filename="Istanbul-2027-${ticket.id.slice(0, 8)}.pdf"`,
       'Cache-Control': 'no-store',
       'X-Robots-Tag': 'noindex',
     },

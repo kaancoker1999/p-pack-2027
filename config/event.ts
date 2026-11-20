@@ -1,5 +1,5 @@
 /**
- * P-PACK 2027 — etkinliğin TÜM ayarları bu dosyada.
+ * Istanbul 2027 — etkinliğin TÜM ayarları bu dosyada.
  * Fiyat, DJ, kapasite, mekan, Revolut linki vb. değiştirmek için sadece burayı düzenleyin.
  *
  * Tarihler İstanbul saatiyle (+03:00) yazılır.
@@ -10,6 +10,8 @@ export type Currency = 'TRY' | 'EUR';
 export type PriceTier = {
   /** Veritabanına price_tier olarak yazılan kimlik */
   id: string;
+  /** Sitede görünen dönem adı */
+  label: string;
   /** Bu dönemin bittiği an (bu an DAHİL DEĞİL). İstanbul saati. */
   until: string;
   TRY: number;
@@ -23,9 +25,11 @@ export type Dj = {
 };
 
 export const event = {
-  name: 'P-PACK 2027',
+  name: 'Istanbul 2027',
+  /** Hero'daki büyük logo: üst satır (altın) ve alt satır (beyaz) */
+  logo: { top: 'ISTANBUL', bottom: '2027' },
   /** Referans kodlarının ve QR içeriğinin ön eki */
-  codePrefix: 'PP27',
+  codePrefix: 'IST27',
 
   /** Kapı açılışı */
   startsAt: '2026-12-31T22:00:00+03:00',
@@ -47,6 +51,7 @@ export const event = {
   /** Toplam kapasite (onaylı biletler + onay bekleyen siparişler bu sayıyı aşamaz) */
   capacity: 250,
   minAge: 18,
+  dressCode: 'Elegant',
 
   /** DJ listesi. Boş bırakılırsa sitede "Line-up yakında açıklanacak" yazar. */
   djs: [
@@ -55,9 +60,10 @@ export const event = {
 
   /** Fiyat dönemleri — sırayla. Son dönemin bitişi aynı zamanda satışın kapanışıdır. */
   priceTiers: [
-    { id: 'early', until: '2026-12-01T00:00:00+03:00', TRY: 2000, EUR: 45 },
-    { id: 'regular', until: '2026-12-20T00:00:00+03:00', TRY: 2500, EUR: 55 },
-    { id: 'late', until: '2027-01-01T00:00:00+03:00', TRY: 3000, EUR: 65 },
+    // Early Bird: 9 Aralık 23:59'a kadar · Mid Bird: 10–24 Aralık · Late Bird: 25–31 Aralık
+    { id: 'early', label: 'Early Bird', until: '2026-12-10T00:00:00+03:00', TRY: 2000, EUR: 45 },
+    { id: 'mid', label: 'Mid Bird', until: '2026-12-25T00:00:00+03:00', TRY: 2500, EUR: 55 },
+    { id: 'late', label: 'Late Bird', until: '2027-01-01T00:00:00+03:00', TRY: 3000, EUR: 65 },
   ] as PriceTier[],
 
   /** Ödeme linki (örnek) */
