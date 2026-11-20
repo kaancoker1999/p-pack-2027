@@ -37,6 +37,7 @@ export async function remainingCapacity(): Promise<number> {
 export type NewOrderInput = {
   reference: string;
   guests: Guest[];
+  invitedBy: string;
   currency: Currency;
   locale: 'tr' | 'en';
   receiptKey: string | null;
@@ -63,10 +64,10 @@ export async function createOrder(input: NewOrderInput): Promise<{ order: OrderR
       }
       const rows = await tx<OrderRow[]>`
         insert into orders
-          (id, reference, buyer_name, buyer_email, quantity, unit_price, currency, total, price_tier,
+          (id, reference, buyer_name, invited_by, quantity, unit_price, currency, total, price_tier,
            status, receipt_url, guests, locale)
         values
-          (${randomUUID()}, ${reference}, ${buyer.name}, ${buyer.email}, ${quantity}, ${unitPrice},
+          (${randomUUID()}, ${reference}, ${buyer.name}, ${input.invitedBy}, ${quantity}, ${unitPrice},
            ${input.currency}, ${unitPrice * quantity}, ${tier.id}, 'PAYMENT_SUBMITTED',
            ${input.receiptKey}, ${JSON.stringify(input.guests)}::jsonb, ${input.locale})
         returning *
@@ -82,7 +83,7 @@ export async function createOrder(input: NewOrderInput): Promise<{ order: OrderR
       if ((e as { code?: string }).code !== '23505') throw e;
       // Aynı referans zaten kayıtlı: çift tıklama ise mevcut siparişi dön, değilse yeni kod üret.
       const [existing] = await sql<OrderRow[]>`select * from orders where reference = ${reference}`;
-      if (existing && existing.buyer_email === buyer.email) {
+      if (existing && existing.buyer_name === buyer.name && existing.quantity === quantity) {
         return { order: normalizeOrder(existing), duplicate: true };
       }
       reference = newReference();
@@ -101,16 +102,29 @@ export async function getOrder(id: string): Promise<OrderRow | null> {
   return row ? normalizeOrder(row) : null;
 }
 
+/** Bir siparişin geçerli/kullanılmış biletleri (sipariş sayfasında gösterilir). */
+export async function getOrderTickets(orderId: string): Promise<TicketRow[]> {
+  return db()<TicketRow[]>`
+    select * from tickets where order_id = ${orderId} and status <> 'CANCELLED' order by created_at, id
+  `;
+}
+
 export async function getTicket(id: string): Promise<TicketRow | null> {
   const [row] = await db()<TicketRow[]>`select * from tickets where id = ${id}`;
   return row ?? null;
 }
 
-async function insertTicket(tx: Tx, orderId: string | null, guest: Guest, locale: 'tr' | 'en'): Promise<TicketRow> {
+async function insertTicket(
+  tx: Tx,
+  orderId: string | null,
+  guest: Guest,
+  invitedBy: string | null,
+  locale: 'tr' | 'en',
+): Promise<TicketRow> {
   const id = newTicketId();
   const rows = await tx<TicketRow[]>`
-    insert into tickets (id, order_id, guest_name, guest_email, guest_instagram, signature, status, locale)
-    values (${id}, ${orderId}, ${guest.name}, ${guest.email}, ${guest.instagram}, ${signTicket(id)}, 'VALID', ${locale})
+    insert into tickets (id, order_id, guest_name, invited_by, signature, status, locale)
+    values (${id}, ${orderId}, ${guest.name}, ${invitedBy}, ${signTicket(id)}, 'VALID', ${locale})
     returning *
   `;
   return rows[0];
@@ -125,7 +139,7 @@ export async function approveOrder(orderId: string, admin: string): Promise<{ or
     if (found.status !== 'PAYMENT_SUBMITTED') throw new AppError('conflict', { status: found.status });
     const order = normalizeOrder(found);
     const tickets: TicketRow[] = [];
-    for (const guest of order.guests) tickets.push(await insertTicket(tx, order.id, guest, order.locale));
+    for (const guest of order.guests) tickets.push(await insertTicket(tx, order.id, guest, order.invited_by, order.locale));
     const [updated] = await tx<OrderRow[]>`
       update orders set status = 'PAID', approved_at = now(), approved_by = ${admin}
       where id = ${order.id} returning *
@@ -156,7 +170,7 @@ export async function replaceTicket(ticketId: string, guest: Guest, admin: strin
     const [old] = await tx<TicketRow[]>`select * from tickets where id = ${ticketId} for update`;
     if (!old) throw new AppError('not_found');
     if (old.status !== 'VALID') throw new AppError('conflict', { status: old.status });
-    const fresh = await insertTicket(tx, old.order_id, guest, old.locale);
+    const fresh = await insertTicket(tx, old.order_id, guest, old.invited_by, old.locale);
     const [cancelled] = await tx<TicketRow[]>`
       update tickets set status = 'CANCELLED', replaced_by = ${fresh.id} where id = ${old.id} returning *
     `;
@@ -166,7 +180,7 @@ export async function replaceTicket(ticketId: string, guest: Guest, admin: strin
       old.id,
       {
         newTicket: fresh.id,
-        from: { name: old.guest_name, email: old.guest_email, instagram: old.guest_instagram },
+        from: { name: old.guest_name },
         to: guest,
       },
       tx,
@@ -176,21 +190,21 @@ export async function replaceTicket(ticketId: string, guest: Guest, admin: strin
 }
 
 /** Elle davetli bileti: siparişsiz, kapasiteye dahil. */
-export async function createCompTicket(guest: Guest, locale: 'tr' | 'en', admin: string): Promise<TicketRow> {
+export async function createCompTicket(guest: Guest, invitedBy: string, locale: 'tr' | 'en', admin: string): Promise<TicketRow> {
   return db().begin(async (txRaw) => {
     const tx = txRaw as unknown as Tx;
     await tx`select pg_advisory_xact_lock(${CAPACITY_LOCK})`;
     const used = await usedCapacity(tx);
     if (used + 1 > event.capacity) throw new AppError('capacity', { remaining: 0 });
-    const ticket = await insertTicket(tx, null, guest, locale);
-    await audit(admin, 'ticket.comp', ticket.id, { guest }, tx);
+    const ticket = await insertTicket(tx, null, guest, invitedBy, locale);
+    await audit(admin, 'ticket.comp', ticket.id, { guest, invitedBy }, tx);
     return ticket;
   });
 }
 
 export type ScanResult =
-  | { result: 'VALID'; name: string; instagram: string; time: string }
-  | { result: 'ALREADY_USED'; name: string; instagram: string; time: string | null }
+  | { result: 'VALID'; name: string; invitedBy: string | null; time: string }
+  | { result: 'ALREADY_USED'; name: string; invitedBy: string | null; time: string | null }
   | { result: 'INVALID'; reason: 'not_found' | 'cancelled' | 'bad_code' | 'ambiguous' };
 
 /**
@@ -226,7 +240,7 @@ export async function checkIn(rawCode: string, staff: string, timeFmt: (d: Date)
       return { result: 'INVALID', reason: 'bad_code' };
     }
     await audit(staff, 'ticket.checkin', used.id, { name: used.guest_name });
-    return { result: 'VALID', name: used.guest_name, instagram: used.guest_instagram, time: timeFmt(used.checked_in_at!) };
+    return { result: 'VALID', name: used.guest_name, invitedBy: used.invited_by, time: timeFmt(used.checked_in_at!) };
   }
 
   const [existing] = await sql<TicketRow[]>`select * from tickets where id = ${id}`;
@@ -235,7 +249,7 @@ export async function checkIn(rawCode: string, staff: string, timeFmt: (d: Date)
     return {
       result: 'ALREADY_USED',
       name: existing.guest_name,
-      instagram: existing.guest_instagram,
+      invitedBy: existing.invited_by,
       time: existing.checked_in_at ? timeFmt(existing.checked_in_at) : null,
     };
   }

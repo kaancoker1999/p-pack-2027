@@ -61,7 +61,11 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
         <div className="px-6 pb-7 pt-6 text-center">
           <p className="text-[10px] uppercase tracking-[0.35em] text-white/50">{t.ticket.guest}</p>
           <h1 className="mt-1 font-display text-3xl font-bold leading-tight">{ticket.guest_name}</h1>
-          <p className="mt-1 text-gold">@{ticket.guest_instagram}</p>
+          {ticket.invited_by && (
+            <p className="mt-1 text-sm text-gold">
+              {t.ticket.invitedBy}: {ticket.invited_by}
+            </p>
+          )}
           <span className={`mt-3 inline-block rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider ${statusStyle}`}>{t.ticket[ticket.status]}</span>
 
           <div className={`relative mx-auto mt-5 w-full max-w-[260px] ${cancelled ? 'opacity-25' : ''}`}>

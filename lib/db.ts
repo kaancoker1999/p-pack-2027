@@ -27,13 +27,14 @@ export function db(): Sql {
 export type OrderStatus = 'PAYMENT_SUBMITTED' | 'PAID' | 'REJECTED';
 export type TicketStatus = 'VALID' | 'USED' | 'CANCELLED';
 
-export type Guest = { name: string; email: string; instagram: string };
+export type Guest = { name: string };
 
 export type OrderRow = {
   id: string;
   reference: string;
   buyer_name: string;
-  buyer_email: string;
+  buyer_email: string | null;
+  invited_by: string | null;
   quantity: number;
   unit_price: number;
   currency: 'TRY' | 'EUR';
@@ -53,8 +54,9 @@ export type TicketRow = {
   id: string;
   order_id: string | null;
   guest_name: string;
-  guest_email: string;
-  guest_instagram: string;
+  guest_email: string | null;
+  guest_instagram: string | null;
+  invited_by: string | null;
   signature: string;
   status: TicketStatus;
   checked_in_at: Date | null;

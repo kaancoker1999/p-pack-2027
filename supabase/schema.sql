@@ -5,7 +5,8 @@ create table if not exists orders (
   id            uuid primary key default gen_random_uuid(),
   reference     text not null unique,
   buyer_name    text not null,
-  buyer_email   text not null,
+  buyer_email   text,                       -- artık kullanılmıyor (e-posta toplanmıyor)
+  invited_by    text,                       -- "Kim davet etti?" (organizatör adı)
   quantity      integer not null check (quantity > 0),
   unit_price    integer not null check (unit_price >= 0),
   currency      text not null check (currency in ('TRY', 'EUR')),
@@ -14,7 +15,7 @@ create table if not exists orders (
   status        text not null default 'PAYMENT_SUBMITTED'
                 check (status in ('PAYMENT_SUBMITTED', 'PAID', 'REJECTED')),
   receipt_url   text,                       -- Storage içindeki dosya yolu (bucket özeldir)
-  guests        jsonb not null,             -- [{name, email, instagram}] — onayda biletlere dönüşür
+  guests        jsonb not null,             -- [{name}] — onayda biletlere dönüşür
   locale        text not null default 'tr' check (locale in ('tr', 'en')),
   submitted_at  timestamptz not null default now(),
   approved_at   timestamptz,
@@ -27,8 +28,9 @@ create table if not exists tickets (
   id              text primary key,         -- 128 bit rastgele (32 hex)
   order_id        uuid references orders (id) on delete restrict,  -- davetli biletlerinde null
   guest_name      text not null,
-  guest_email     text not null,
-  guest_instagram text not null,
+  guest_email     text,                     -- artık kullanılmıyor
+  guest_instagram text,                     -- artık kullanılmıyor
+  invited_by      text,
   signature       text not null,            -- HMAC-SHA256(TICKET_SECRET, id)
   status          text not null default 'VALID' check (status in ('VALID', 'USED', 'CANCELLED')),
   checked_in_at   timestamptz,
@@ -56,6 +58,13 @@ create table if not exists rate_limits (
   count        integer not null default 1,
   primary key (key, window_start)
 );
+
+-- Önceki sürümle kurulmuş veritabanları için (tekrar çalıştırmak güvenlidir)
+alter table orders  add column if not exists invited_by text;
+alter table tickets add column if not exists invited_by text;
+alter table orders  alter column buyer_email drop not null;
+alter table tickets alter column guest_email drop not null;
+alter table tickets alter column guest_instagram drop not null;
 
 -- Uygulama veritabanına sunucudan (DATABASE_URL) bağlanır. RLS'i açıp hiç policy
 -- yazmayarak tabloları Supabase'in herkese açık (anon) API'sine tamamen kapatıyoruz.

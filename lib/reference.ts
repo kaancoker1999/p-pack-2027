@@ -6,14 +6,17 @@ import { secret } from './env';
 const ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
 const TOKEN_TTL_MS = 7 * 24 * 3600 * 1000;
 
-/** Tahmin edilemez referans kodu, ör. IST27-7K3QX (kriptografik rastgele). */
+/**
+ * Tahmin edilemez referans kodu, ör. IST27-7K3Q-X9MB (kriptografik rastgele, ~40 bit).
+ * Biletler sipariş sayfasında bu kodla açıldığı için 8 karakterdir.
+ */
 export function newReference(): string {
   let s = '';
-  for (let i = 0; i < 5; i++) s += ALPHABET[randomInt(ALPHABET.length)];
-  return `${event.codePrefix}-${s}`;
+  for (let i = 0; i < 8; i++) s += ALPHABET[randomInt(ALPHABET.length)];
+  return `${event.codePrefix}-${s.slice(0, 4)}-${s.slice(4)}`;
 }
 
-export const REFERENCE_RE = new RegExp(`^${event.codePrefix}-[${ALPHABET}]{5}$`);
+export const REFERENCE_RE = new RegExp(`^${event.codePrefix}-[${ALPHABET}]{4}-[${ALPHABET}]{4}$`);
 
 function mac(reference: string, ts: string): string {
   return createHmac('sha256', secret('SESSION_SECRET')).update(`ref:${reference}:${ts}`).digest('hex');

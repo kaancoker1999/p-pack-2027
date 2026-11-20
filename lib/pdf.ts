@@ -50,7 +50,6 @@ export async function ticketPdf(ticket: TicketRow): Promise<Uint8Array> {
   centered(page, `${event.venue.name}, ${event.venue.area}`, H - 126, fReg, 10, white);
 
   centered(page, ticket.guest_name, H - 190, fDisp, 22);
-  centered(page, `@${ticket.guest_instagram}`, H - 210, fReg, 12, gold);
 
   const qr = await pdf.embedPng(await qrPng(qrPayload(ticket.id, ticket.signature), 720));
   const qrSize = 190;

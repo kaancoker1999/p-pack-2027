@@ -4,8 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 type Counts = { checkedIn: number; totalTickets: number };
 type Result =
-  | { result: 'VALID'; name: string; instagram: string; time: string }
-  | { result: 'ALREADY_USED'; name: string; instagram: string; time: string | null }
+  | { result: 'VALID'; name: string; invitedBy: string | null; time: string }
+  | { result: 'ALREADY_USED'; name: string; invitedBy: string | null; time: string | null }
   | { result: 'INVALID'; reason: string }
   | { result: 'ERROR'; message: string };
 
@@ -212,14 +212,16 @@ export default function CheckinScanner({ initial, isAdmin }: { initial: Counts; 
           <span className="text-4xl font-extrabold tracking-wide sm:text-5xl">{overlay.title}</span>
           {result.result === 'VALID' && (
             <span className="text-2xl font-semibold">
-              {result.name} <span className="block text-xl font-normal opacity-90">(@{result.instagram})</span>
+              {result.name}
+              {result.invitedBy && <span className="block text-xl font-normal opacity-90">Davet eden: {result.invitedBy}</span>}
             </span>
           )}
           {result.result === 'ALREADY_USED' && (
             <>
               <span className="text-5xl font-bold tabular-nums">{result.time ?? '—'}</span>
               <span className="text-lg opacity-90">
-                {result.name} (@{result.instagram})
+                {result.name}
+                {result.invitedBy ? ` · Davet eden: ${result.invitedBy}` : ''}
               </span>
             </>
           )}

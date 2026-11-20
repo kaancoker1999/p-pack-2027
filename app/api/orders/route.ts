@@ -1,5 +1,5 @@
 import { fail, json, sameOrigin } from '@/lib/http';
-import { adminNewOrderMail, orderReceivedMail } from '@/lib/email/templates';
+import { adminNewOrderMail } from '@/lib/email/templates';
 import { adminRecipients, sendEmails } from '@/lib/email/send';
 import { AppError, createOrder } from '@/lib/orders';
 import { rateLimit } from '@/lib/rate-limit';
@@ -52,6 +52,7 @@ export async function POST(req: Request) {
     const { order, duplicate } = await createOrder({
       reference: input.reference,
       guests: input.guests,
+      invitedBy: input.invitedBy,
       currency: input.currency,
       locale: input.locale,
       receiptKey,
@@ -60,14 +61,13 @@ export async function POST(req: Request) {
       if (receiptKey && receiptKey !== order.receipt_url) await deleteReceipt(receiptKey);
     } else {
       const admins = adminRecipients();
-      await sendEmails([orderReceivedMail(order), ...(admins.length ? [adminNewOrderMail(order, admins)] : [])]);
+      if (admins.length) await sendEmails([adminNewOrderMail(order, admins)]);
     }
     return json({
       reference: order.reference,
       total: order.total,
       unitPrice: order.unit_price,
       currency: order.currency,
-      email: order.buyer_email,
     });
   } catch (e) {
     if (receiptKey) await deleteReceipt(receiptKey);

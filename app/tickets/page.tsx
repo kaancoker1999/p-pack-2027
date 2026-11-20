@@ -49,6 +49,7 @@ export default async function TicketsPage() {
           prices={{ TRY: tier.TRY, EUR: tier.EUR }}
           revolutUrl={event.revolutUrl}
           receiptMaxMb={event.receiptMaxMb}
+          inviters={event.inviters}
         />
       )}
     </PageShell>

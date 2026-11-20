@@ -3,12 +3,12 @@
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
-type Guest = { name: string; email: string; instagram: string };
+type Guest = { name: string };
 type Order = {
   id: string;
   reference: string;
   buyerName: string;
-  buyerEmail: string;
+  invitedBy: string | null;
   quantity: number;
   unitPrice: number;
   currency: 'TRY' | 'EUR';
@@ -26,8 +26,7 @@ type Ticket = {
   id: string;
   orderId: string | null;
   name: string;
-  email: string;
-  instagram: string;
+  invitedBy: string | null;
   status: 'VALID' | 'USED' | 'CANCELLED';
   checkedInAt: string | null;
   replacedBy: string | null;
@@ -38,6 +37,7 @@ export type AdminData = {
   user: string;
   now: number;
   approvalWindowHours: number;
+  inviters: string[];
   stats: {
     confirmedTickets: number;
     pendingOrders: number;
@@ -61,7 +61,6 @@ const ACTIONS: Record<string, string> = {
   'order.approve': 'Sipariş onaylandı',
   'order.reject': 'Sipariş reddedildi',
   'ticket.rename': 'İsim değişikliği',
-  'ticket.resend': 'Bilet tekrar gönderildi',
   'ticket.comp': 'Davetli bileti oluşturuldu',
   'ticket.checkin': 'Kapıdan giriş',
   'guests.export': 'Misafir listesi indirildi',
@@ -84,7 +83,8 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
   const [rejecting, setRejecting] = useState<Order | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [editing, setEditing] = useState<Ticket | 'new' | null>(null);
-  const [form, setForm] = useState<Guest & { locale: 'tr' | 'en' }>({ name: '', email: '', instagram: '', locale: 'tr' });
+  const [form, setForm] = useState<{ name: string; invitedBy: string; locale: 'tr' | 'en' }>({ name: '', invitedBy: '', locale: 'tr' });
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const overdueMs = data.approvalWindowHours * 3600 * 1000;
   const isOverdue = (o: Order) => o.status === 'PAYMENT_SUBMITTED' && data.now - new Date(o.submittedAt).getTime() > overdueMs;
@@ -100,7 +100,7 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
     return data.orders.filter((o) => {
       if (status === 'OVERDUE' ? !isOverdue(o) : status !== 'ALL' && o.status !== status) return false;
       if (!needle) return true;
-      const hay = norm([o.reference, o.buyerName, o.buyerEmail, ...o.guests.flatMap((g) => [g.name, g.email, g.instagram])].join(' '));
+      const hay = norm([o.reference, o.buyerName, o.invitedBy ?? '', ...o.guests.map((g) => g.name)].join(' '));
       return hay.includes(needle);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -111,7 +111,7 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
     return data.tickets.filter((t) => {
       if (ticketStatus !== 'ALL' && t.status !== ticketStatus) return false;
       if (!needle) return true;
-      return norm([t.name, t.email, t.instagram, t.id, t.orderId ? (refByOrder.get(t.orderId) ?? '') : 'davetli'].join(' ')).includes(needle);
+      return norm([t.name, t.invitedBy ?? '', t.id, t.orderId ? (refByOrder.get(t.orderId) ?? '') : 'davetli'].join(' ')).includes(needle);
     });
   }, [data.tickets, q, ticketStatus, refByOrder]);
 
@@ -130,17 +130,13 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
               : d.error === 'capacity'
                 ? 'Kapasite dolu.'
                 : d.error === 'validation'
-                  ? 'Bilgileri kontrol edin: ad soyad, geçerli e-posta ve Instagram kullanıcı adı gerekli.'
+                  ? 'Bilgileri kontrol edin: ad ve soyad eksiksiz olmalı, davet eden seçilmeli.'
                   : 'İşlem başarısız oldu.';
         setFlash({ ok: false, text });
         router.refresh();
         return false;
       }
-      setFlash(
-        d.emailsFailed
-          ? { ok: false, text: `${okText} Ancak ${d.emailsFailed} e-posta gönderilemedi — "Tekrar gönder" ile yeniden deneyin.` }
-          : { ok: true, text: okText },
-      );
+      setFlash({ ok: true, text: okText });
       router.refresh();
       return true;
     } catch {
@@ -152,8 +148,8 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
   }
 
   const approve = (o: Order) => {
-    if (!confirm(`${o.reference} onaylansın mı?\n${o.quantity} kişi · ${money(o.total, o.currency)}\n\n${o.quantity} bilet üretilip e-postayla gönderilecek.`)) return;
-    void call(`approve:${o.id}`, `/api/admin/orders/${o.id}/approve`, null, `${o.reference} onaylandı, ${o.quantity} bilet gönderildi.`);
+    if (!confirm(`${o.reference} onaylansın mı?\n${o.quantity} kişi · ${money(o.total, o.currency)}\n\n${o.quantity} bilet üretilecek ve sipariş sayfasında görünecek.`)) return;
+    void call(`approve:${o.id}`, `/api/admin/orders/${o.id}/approve`, null, `${o.reference} onaylandı, ${o.quantity} bilet sipariş sayfasında görünüyor.`);
   };
   const submitReject = async () => {
     if (!rejecting) return;
@@ -163,7 +159,7 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
     }
   };
   const openEdit = (t: Ticket | 'new') => {
-    setForm(t === 'new' ? { name: '', email: '', instagram: '', locale: 'tr' } : { name: t.name, email: t.email, instagram: t.instagram, locale: 'tr' });
+    setForm(t === 'new' ? { name: '', invitedBy: '', locale: 'tr' } : { name: t.name, invitedBy: t.invitedBy ?? '', locale: 'tr' });
     setEditing(t);
   };
   const submitEdit = async (e: React.FormEvent) => {
@@ -171,11 +167,19 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
     if (!editing) return;
     const ok =
       editing === 'new'
-        ? await call('comp', '/api/admin/tickets', form, `Davetli bileti oluşturuldu ve ${form.email} adresine gönderildi.`)
-        : await call(`rename:${editing.id}`, `/api/admin/tickets/${editing.id}/rename`, { name: form.name, email: form.email, instagram: form.instagram }, `Eski bilet iptal edildi, yeni bilet ${form.email} adresine gönderildi.`);
+        ? await call('comp', '/api/admin/tickets', form, `Davetli bileti oluşturuldu: ${form.name}. Biletler sekmesinden linkini kopyalayıp gönderin.`)
+        : await call(`rename:${editing.id}`, `/api/admin/tickets/${editing.id}/rename`, { name: form.name }, `Eski bilet iptal edildi; ${form.name} adına yeni QR'lı bilet oluşturuldu.`);
     if (ok) setEditing(null);
   };
-  const resend = (t: Ticket) => void call(`resend:${t.id}`, `/api/admin/tickets/${t.id}/resend`, null, `Bilet ${t.email} adresine tekrar gönderildi.`);
+  const copyLink = async (t: Ticket) => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/ticket/${t.id}`);
+      setCopiedId(t.id);
+      setTimeout(() => setCopiedId(null), 1600);
+    } catch {
+      setFlash({ ok: false, text: 'Link kopyalanamadı; "Bileti aç" ile açıp adres çubuğundan kopyalayın.' });
+    }
+  };
   const logout = async () => {
     await fetch('/api/admin/logout', { method: 'POST' });
     window.location.assign('/admin/login');
@@ -198,8 +202,8 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
         <a href={`/ticket/${t.id}`} target="_blank" className="rounded-lg border border-white/15 px-2.5 py-1 text-xs hover:border-white/40">
           Bileti aç
         </a>
-        <button onClick={() => resend(t)} disabled={busy !== null} className="rounded-lg border border-white/15 px-2.5 py-1 text-xs hover:border-white/40 disabled:opacity-40">
-          {busy === `resend:${t.id}` ? '…' : 'Tekrar gönder'}
+        <button onClick={() => copyLink(t)} className="rounded-lg border border-white/15 px-2.5 py-1 text-xs hover:border-white/40">
+          {copiedId === t.id ? '✓ Kopyalandı' : 'Linki kopyala'}
         </button>
         {t.status === 'VALID' && (
           <button onClick={() => openEdit(t)} disabled={busy !== null} className="rounded-lg border border-gold/50 px-2.5 py-1 text-xs text-gold hover:bg-gold/10 disabled:opacity-40">
@@ -270,7 +274,7 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
         </div>
         {tab !== 'log' && (
           <>
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ara: referans, isim, e-posta, Instagram" className="field max-w-xs py-2 text-sm" aria-label="Ara" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ara: referans, isim, davet eden" className="field max-w-xs py-2 text-sm" aria-label="Ara" />
             {tab === 'orders' ? (
               <select value={status} onChange={(e) => setStatus(e.target.value as typeof status)} className="field w-auto py-2 text-sm" aria-label="Durum filtresi">
                 <option value="ALL">Tüm durumlar</option>
@@ -296,7 +300,7 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
           <table className="w-full min-w-[980px] text-left text-sm">
             <thead className="bg-white/[0.04] text-[11px] uppercase tracking-wider text-white/50">
               <tr>
-                {['Referans', 'Sipariş sahibi', 'Kişi', 'Tutar', 'Dekont', 'Durum', 'Bildirim saati', 'Onaylayan', ''].map((h) => (
+                {['Referans', 'Sipariş sahibi', 'Davet eden', 'Kişi', 'Tutar', 'Dekont', 'Durum', 'Bildirim saati', 'Onaylayan', ''].map((h) => (
                   <th key={h} className="px-3 py-3 font-medium">
                     {h}
                   </th>
@@ -306,7 +310,7 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
             <tbody>
               {orders.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-3 py-10 text-center text-white/50">
+                  <td colSpan={10} className="px-3 py-10 text-center text-white/50">
                     Sipariş bulunamadı.
                   </td>
                 </tr>
@@ -324,8 +328,8 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
                     </td>
                     <td className="px-3 py-3">
                       <span className="font-medium">{o.buyerName}</span>
-                      <span className="block text-xs text-white/50">{o.buyerEmail}</span>
                     </td>
+                    <td className="px-3 py-3 text-gold">{o.invitedBy ?? '—'}</td>
                     <td className="px-3 py-3">{o.quantity}</td>
                     <td className="px-3 py-3 font-semibold">
                       {money(o.total, o.currency)}
@@ -367,15 +371,14 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
                   </tr>,
                   expanded && (
                     <tr key={`${o.id}-d`} className="border-t border-white/5 bg-black/40">
-                      <td colSpan={9} className="px-4 py-4">
+                      <td colSpan={10} className="px-4 py-4">
                         {o.status === 'REJECTED' && <p className="mb-3 text-sm text-white/70">Ret açıklaması: {o.rejectReason || '—'}</p>}
                         {o.status === 'PAID' ? (
                           <ul className="space-y-2">
                             {(ticketsByOrder.get(o.id) ?? []).map((t) => (
                               <li key={t.id} className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 px-3 py-2 ${t.status === 'CANCELLED' ? 'opacity-50' : ''}`}>
                                 <span>
-                                  <span className="font-medium">{t.name}</span> <span className="text-gold">@{t.instagram}</span>
-                                  <span className="block text-xs text-white/50">{t.email}</span>
+                                  <span className="font-medium">{t.name}</span>
                                 </span>
                                 <span className="flex flex-wrap items-center gap-3">
                                   {ticketBadge(t.status)}
@@ -388,7 +391,7 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
                           <ul className="space-y-1 text-sm">
                             {o.guests.map((g, i) => (
                               <li key={i}>
-                                <span className="font-medium">{g.name}</span> <span className="text-gold">@{g.instagram}</span> <span className="text-white/50">· {g.email}</span>
+                                <span className="font-medium">{g.name}</span>
                               </li>
                             ))}
                           </ul>
@@ -408,7 +411,7 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
           <table className="w-full min-w-[820px] text-left text-sm">
             <thead className="bg-white/[0.04] text-[11px] uppercase tracking-wider text-white/50">
               <tr>
-                {['Misafir', 'E-posta', 'Sipariş', 'Durum', 'Giriş', ''].map((h) => (
+                {['Misafir', 'Davet eden', 'Sipariş', 'Durum', 'Giriş', ''].map((h) => (
                   <th key={h} className="px-3 py-3 font-medium">
                     {h}
                   </th>
@@ -426,9 +429,9 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
               {tickets.map((t) => (
                 <tr key={t.id} className={`border-t border-white/10 ${t.status === 'CANCELLED' ? 'opacity-50' : ''}`}>
                   <td className="px-3 py-3">
-                    <span className="font-medium">{t.name}</span> <span className="text-gold">@{t.instagram}</span>
+                    <span className="font-medium">{t.name}</span>
                   </td>
-                  <td className="px-3 py-3 text-white/70">{t.email}</td>
+                  <td className="px-3 py-3 text-gold">{t.invitedBy ?? '—'}</td>
                   <td className="px-3 py-3 font-mono text-xs">{t.orderId ? refByOrder.get(t.orderId) : 'Davetli'}</td>
                   <td className="px-3 py-3">{ticketBadge(t.status)}</td>
                   <td className="px-3 py-3 text-white/70">{t.checkedInAt ? dt(t.checkedInAt) : '—'}</td>
@@ -455,7 +458,7 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
             <tbody>
               {data.log.map((l) => {
                 const d = l.details ?? {};
-                const extra = typeof d.reference === 'string' ? d.reference : typeof d.name === 'string' ? d.name : typeof (d.to as Guest | undefined)?.name === 'string' ? `→ ${(d.to as Guest).name}` : typeof (d.guest as Guest | undefined)?.name === 'string' ? (d.guest as Guest).name : '';
+                const extra = typeof d.reference === 'string' ? d.reference : typeof d.name === 'string' ? d.name : typeof (d.to as Guest | undefined)?.name === 'string' ? `${(d.from as Guest | undefined)?.name ?? ''} → ${(d.to as Guest).name}` : typeof (d.guest as Guest | undefined)?.name === 'string' ? (d.guest as Guest).name : '';
                 return (
                   <tr key={l.id} className="border-t border-white/10">
                     <td className="whitespace-nowrap px-3 py-2.5 text-white/70">{dt(l.at)}</td>
@@ -475,7 +478,7 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
       {rejecting && (
         <Modal title={`${rejecting.reference} reddedilsin mi?`} onClose={() => setRejecting(null)}>
           <p className="text-sm text-white/70">
-            {rejecting.buyerName} · {rejecting.quantity} kişi · {money(rejecting.total, rejecting.currency)}. Sipariş sahibine e-posta gider ve kontenjan serbest kalır.
+            {rejecting.buyerName} · {rejecting.quantity} kişi · {money(rejecting.total, rejecting.currency)}. Açıklama sipariş sayfasında görünür ve kontenjan serbest kalır.
           </p>
           <label className="label mt-4" htmlFor="reason">
             Açıklama (kullanıcıya gösterilir, isteğe bağlı)
@@ -496,8 +499,8 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
         <Modal title={editing === 'new' ? 'Davetli bileti oluştur' : 'İsim değişikliği'} onClose={() => setEditing(null)}>
           <p className="text-sm text-white/70">
             {editing === 'new'
-              ? 'Siparişsiz bir bilet oluşturulur ve misafirin e-postasına gönderilir. Kapasiteden düşer.'
-              : 'Eski bilet iptal edilir; yeni QR kodlu yeni bilet aşağıdaki e-postaya gönderilir.'}
+              ? 'Siparişsiz bir bilet oluşturulur. Kapasiteden düşer; linkini Biletler sekmesinden kopyalayıp misafire gönderin.'
+              : 'Eski bilet iptal edilir; yeni QR kodlu bilet sipariş sayfasında eskisinin yerini alır.'}
           </p>
           <form onSubmit={submitEdit} className="mt-4 space-y-3">
             <div>
@@ -506,22 +509,27 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
               </label>
               <input id="e-name" className="field" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required maxLength={80} />
             </div>
-            <div>
-              <label className="label" htmlFor="e-email">
-                E-posta
-              </label>
-              <input id="e-email" type="email" className="field" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required maxLength={160} />
-            </div>
-            <div>
-              <label className="label" htmlFor="e-ig">
-                Instagram (@ olmadan)
-              </label>
-              <input id="e-ig" className="field" value={form.instagram} onChange={(e) => setForm({ ...form, instagram: e.target.value.replace(/^@+/, '') })} required maxLength={30} autoCapitalize="none" />
-            </div>
+            {editing === 'new' && (
+              <div>
+                <label className="label" htmlFor="e-inviter">
+                  Davet eden
+                </label>
+                <select id="e-inviter" className="field" value={form.invitedBy} onChange={(e) => setForm({ ...form, invitedBy: e.target.value })} required>
+                  <option value="" disabled>
+                    Seç…
+                  </option>
+                  {data.inviters.map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             {editing === 'new' && (
               <div>
                 <label className="label" htmlFor="e-locale">
-                  Bilet e-postasının dili
+                  Biletin dili
                 </label>
                 <select id="e-locale" className="field" value={form.locale} onChange={(e) => setForm({ ...form, locale: e.target.value as 'tr' | 'en' })}>
                   <option value="tr">Türkçe</option>
@@ -534,7 +542,7 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
                 Vazgeç
               </button>
               <button disabled={busy !== null} className="btn-primary px-5 py-2.5">
-                {busy ? '…' : editing === 'new' ? 'Oluştur ve gönder' : 'Değiştir ve yeni bileti gönder'}
+                {busy ? '…' : editing === 'new' ? 'Bileti oluştur' : 'İsmi değiştir'}
               </button>
             </div>
           </form>

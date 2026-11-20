@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Currency } from '@/config/event';
 import { fmt, type Dict, type Locale } from '@/i18n';
 
-type Guest = { name: string; email: string; instagram: string };
+type Guest = { name: string };
 type Quote = {
   reference: string;
   token: string;
@@ -14,7 +14,7 @@ type Quote = {
   unitPrice: number;
   total: number;
 };
-type Saved = { guests: Guest[]; currency: Currency; quote: Quote | null };
+type Saved = { guests: Guest[]; invitedBy: string; currency: Currency; quote: Quote | null };
 
 type Props = {
   t: Dict;
@@ -23,13 +23,12 @@ type Props = {
   prices: Record<Currency, number>;
   revolutUrl: string;
   receiptMaxMb: number;
+  inviters: readonly string[];
 };
 
 const STORAGE_KEY = 'ppack-checkout-v1';
-const emptyGuest = (): Guest => ({ name: '', email: '', instagram: '' });
+const emptyGuest = (): Guest => ({ name: '' });
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const IG_RE = /^[A-Za-z0-9._]{1,30}$/;
 const NAME_RE = /^[\p{L}\p{M}'’.\- ]+$/u;
 
 function money(amount: number, currency: Currency, locale: Locale) {
@@ -40,16 +39,13 @@ function money(amount: number, currency: Currency, locale: Locale) {
 
 function guestErrors(g: Guest) {
   const name = g.name.trim();
-  return {
-    name: name.length < 3 || name.split(/\s+/).length < 2 || !NAME_RE.test(name),
-    email: !EMAIL_RE.test(g.email.trim()),
-    instagram: !IG_RE.test(g.instagram.trim().replace(/^@+/, '')),
-  };
+  return { name: name.length < 3 || name.split(/\s+/).length < 2 || !NAME_RE.test(name) };
 }
 
-export default function TicketFlow({ t, locale, remaining, prices, revolutUrl, receiptMaxMb }: Props) {
+export default function TicketFlow({ t, locale, remaining, prices, revolutUrl, receiptMaxMb, inviters }: Props) {
   const [step, setStep] = useState<'form' | 'pay' | 'done'>('form');
   const [guests, setGuests] = useState<Guest[]>([emptyGuest()]);
+  const [invitedBy, setInvitedBy] = useState('');
   const [currency, setCurrency] = useState<Currency>('TRY');
   const [consents, setConsents] = useState({ age: false, noRefund: false, kvkk: false });
   const [website, setWebsite] = useState(''); // honeypot
@@ -61,7 +57,8 @@ export default function TicketFlow({ t, locale, remaining, prices, revolutUrl, r
   const [notice, setNotice] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [payQr, setPayQr] = useState<string | null>(null);
-  const [done, setDone] = useState<{ reference: string; total: number; currency: Currency; email: string } | null>(null);
+  const [done, setDone] = useState<{ reference: string; total: number; currency: Currency } | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -71,7 +68,10 @@ export default function TicketFlow({ t, locale, remaining, prices, revolutUrl, r
       const raw = sessionStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const saved = JSON.parse(raw) as Saved;
-      if (Array.isArray(saved.guests) && saved.guests.length) setGuests(saved.guests.slice(0, Math.max(1, remaining)));
+      if (Array.isArray(saved.guests) && saved.guests.length) {
+        setGuests(saved.guests.slice(0, Math.max(1, remaining)).map((g) => ({ name: String(g?.name ?? '') })));
+      }
+      if (typeof saved.invitedBy === 'string' && inviters.includes(saved.invitedBy)) setInvitedBy(saved.invitedBy);
       if (saved.currency === 'TRY' || saved.currency === 'EUR') setCurrency(saved.currency);
       if (saved.quote) {
         setQuote(saved.quote);
@@ -87,11 +87,11 @@ export default function TicketFlow({ t, locale, remaining, prices, revolutUrl, r
   useEffect(() => {
     if (step === 'done') return;
     try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ guests, currency, quote } satisfies Saved));
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ guests, invitedBy, currency, quote } satisfies Saved));
     } catch {
       /* yok say */
     }
-  }, [guests, currency, quote, step]);
+  }, [guests, invitedBy, currency, quote, step]);
 
   useEffect(() => {
     if (step !== 'pay') return;
@@ -113,7 +113,7 @@ export default function TicketFlow({ t, locale, remaining, prices, revolutUrl, r
   };
 
   const errs = useMemo(() => guests.map(guestErrors), [guests]);
-  const guestsValid = errs.every((e) => !e.name && !e.email && !e.instagram);
+  const guestsValid = errs.every((e) => !e.name) && inviters.includes(invitedBy);
   const consentsOk = consents.age && consents.noRefund && consents.kvkk;
   const quantity = guests.length;
   const total = quantity * prices[currency];
@@ -149,11 +149,8 @@ export default function TicketFlow({ t, locale, remaining, prices, revolutUrl, r
   };
 
   const payload = () => ({
-    guests: guests.map((g) => ({
-      name: g.name.trim().replace(/\s+/g, ' '),
-      email: g.email.trim(),
-      instagram: g.instagram.trim().replace(/^@+/, ''),
-    })),
+    guests: guests.map((g) => ({ name: g.name.trim().replace(/\s+/g, ' ') })),
+    invitedBy,
     currency,
     locale,
     consents,
@@ -283,7 +280,7 @@ export default function TicketFlow({ t, locale, remaining, prices, revolutUrl, r
           </div>
 
           {guests.map((g, i) => {
-            const e = showErrors ? errs[i] : { name: false, email: false, instagram: false };
+            const e = showErrors ? errs[i] : { name: false };
             return (
               <fieldset key={i} className="card">
                 <legend className="sr-only">{fmt(t.flow.guest, { n: i + 1 })}</legend>
@@ -292,35 +289,41 @@ export default function TicketFlow({ t, locale, remaining, prices, revolutUrl, r
                   {i === 0 && <span className="rounded-full bg-gold px-3 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-black">{t.flow.owner}</span>}
                 </div>
                 {i === 0 && <p className="mt-1 text-sm text-white/60">{t.flow.ownerHint}</p>}
-                <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                  <div className="sm:col-span-2">
-                    <label className="label" htmlFor={`name-${i}`}>
-                      {t.flow.name} *
-                    </label>
-                    <input id={`name-${i}`} className={`field ${e.name ? 'field-error' : ''}`} value={g.name} onChange={(ev) => updateGuest(i, { name: ev.target.value })} autoComplete={i === 0 ? 'name' : 'off'} maxLength={80} required aria-invalid={e.name} />
-                    {e.name && <p className="mt-1 text-xs text-crimson">{t.errors.name}</p>}
-                  </div>
-                  <div>
-                    <label className="label" htmlFor={`email-${i}`}>
-                      {t.flow.email} *
-                    </label>
-                    <input id={`email-${i}`} type="email" inputMode="email" className={`field ${e.email ? 'field-error' : ''}`} value={g.email} onChange={(ev) => updateGuest(i, { email: ev.target.value })} autoComplete={i === 0 ? 'email' : 'off'} autoCapitalize="none" maxLength={160} required aria-invalid={e.email} />
-                    {e.email && <p className="mt-1 text-xs text-crimson">{t.errors.email}</p>}
-                  </div>
-                  <div>
-                    <label className="label" htmlFor={`ig-${i}`}>
-                      {t.flow.instagram} *
-                    </label>
-                    <div className="relative">
-                      <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/40">@</span>
-                      <input id={`ig-${i}`} className={`field pl-9 ${e.instagram ? 'field-error' : ''}`} value={g.instagram} onChange={(ev) => updateGuest(i, { instagram: ev.target.value.replace(/^@+/, '') })} placeholder={t.flow.instagramPh} autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={31} required aria-invalid={e.instagram} />
-                    </div>
-                    {e.instagram && <p className="mt-1 text-xs text-crimson">{t.errors.instagram}</p>}
-                  </div>
+                <div className="mt-5">
+                  <label className="label" htmlFor={`name-${i}`}>
+                    {t.flow.name} *
+                  </label>
+                  <input id={`name-${i}`} className={`field ${e.name ? 'field-error' : ''}`} value={g.name} onChange={(ev) => updateGuest(i, { name: ev.target.value })} autoComplete={i === 0 ? 'name' : 'off'} maxLength={80} required aria-invalid={e.name} />
+                  {e.name && <p className="mt-1 text-xs text-crimson">{t.errors.name}</p>}
                 </div>
               </fieldset>
             );
           })}
+
+          <div className="card">
+            <label htmlFor="invited-by" className="font-display text-xl font-bold">
+              {t.flow.invitedBy} *
+            </label>
+            <p className="mt-1 text-sm text-white/60">{t.flow.invitedByHint}</p>
+            <select
+              id="invited-by"
+              className={`field mt-4 ${showErrors && !inviters.includes(invitedBy) ? 'field-error' : ''}`}
+              value={invitedBy}
+              onChange={(e) => setInvitedBy(e.target.value)}
+              required
+              aria-invalid={showErrors && !inviters.includes(invitedBy)}
+            >
+              <option value="" disabled>
+                {t.flow.invitedByPh}
+              </option>
+              {inviters.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+            {showErrors && !inviters.includes(invitedBy) && <p className="mt-1 text-xs text-crimson">{t.errors.invitedBy}</p>}
+          </div>
 
           {/* Honeypot: ekranda görünmez, botlar doldurur */}
           <div className="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
@@ -478,7 +481,22 @@ export default function TicketFlow({ t, locale, remaining, prices, revolutUrl, r
           <p className="mt-6 text-xs uppercase tracking-[0.3em] text-white/60">{t.flow.doneRef}</p>
           <p className="mt-2 font-mono text-3xl font-bold tracking-widest text-gold">{done.reference}</p>
           <p className="mt-2 text-sm text-white/70">{money(done.total, done.currency, locale)}</p>
-          <p className="mt-4 text-xs text-white/50">{fmt(t.flow.doneMail, { email: done.email })}</p>
+          <p className="mx-auto mt-5 max-w-md rounded-xl border border-gold/50 bg-gold/10 px-4 py-3 text-sm font-medium text-white">{t.flow.doneSave}</p>
+          <button
+            type="button"
+            className="mt-4 text-sm text-gold underline underline-offset-4"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(`${window.location.origin}/order/${done.reference}`);
+                setLinkCopied(true);
+                setTimeout(() => setLinkCopied(false), 1800);
+              } catch {
+                /* pano erişimi yok */
+              }
+            }}
+          >
+            {linkCopied ? `✓ ${t.flow.copied}` : t.flow.copyLink}
+          </button>
           <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
             <Link href={`/order/${done.reference}`} className="btn-primary">
               {t.flow.doneTrack}

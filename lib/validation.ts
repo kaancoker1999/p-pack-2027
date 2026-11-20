@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { event } from '@/config/event';
 
 const name = z
   .string()
@@ -8,19 +9,14 @@ const name = z
   .regex(/^[\p{L}\p{M}'’.\- ]+$/u)
   .refine((s) => s.split(/\s+/).length >= 2, 'full_name');
 
-const email = z.string().trim().toLowerCase().max(160).email();
+/** "Kim davet etti?" — yalnızca config'deki organizatör adlarından biri olabilir. */
+const invitedBy = z.string().refine((v) => (event.inviters as readonly string[]).includes(v), 'inviter');
 
-/** Instagram kullanıcı adı: baştaki @ atılır, küçük harfe çevrilir. */
-const instagram = z
-  .string()
-  .trim()
-  .transform((s) => s.replace(/^@+/, '').toLowerCase())
-  .pipe(z.string().regex(/^[a-z0-9._]{1,30}$/));
-
-export const guestSchema = z.object({ name, email, instagram });
+export const guestSchema = z.object({ name });
 
 export const checkoutSchema = z.object({
   guests: z.array(guestSchema).min(1).max(250),
+  invitedBy,
   currency: z.enum(['TRY', 'EUR']),
   locale: z.enum(['tr', 'en']),
   consents: z.object({
@@ -47,7 +43,7 @@ export const checkinLoginSchema = z.object({ password: z.string().min(1).max(200
 export const rejectSchema = z.object({ reason: z.string().trim().max(500).optional().default('') });
 
 export const ticketEditSchema = guestSchema;
-export const compTicketSchema = guestSchema.extend({ locale: z.enum(['tr', 'en']).default('tr') });
+export const compTicketSchema = guestSchema.extend({ invitedBy, locale: z.enum(['tr', 'en']).default('tr') });
 
 export const scanSchema = z.object({ code: z.string().trim().min(1).max(300) });
 

@@ -12,17 +12,17 @@ function cell(v: string): string {
   return `"${s.replace(/"/g, '""')}"`;
 }
 
-/** Misafir listesi CSV: ad, e-posta, Instagram, bilet durumu */
+/** Misafir listesi CSV: ad, davet eden, bilet durumu, referans */
 export const GET = adminRoute(async (_req, session) => {
-  const rows = await db()<{ guest_name: string; guest_email: string; guest_instagram: string; status: string; reference: string | null }[]>`
-    select t.guest_name, t.guest_email, t.guest_instagram, t.status, o.reference
+  const rows = await db()<{ guest_name: string; invited_by: string | null; status: string; reference: string | null }[]>`
+    select t.guest_name, t.invited_by, t.status, o.reference
     from tickets t left join orders o on o.id = t.order_id
     order by (t.status = 'CANCELLED'), lower(t.guest_name)
   `;
   const lines = [
-    ['Ad Soyad', 'E-posta', 'Instagram', 'Bilet durumu', 'Referans'].map(cell).join(','),
+    ['Ad Soyad', 'Davet eden', 'Bilet durumu', 'Referans'].map(cell).join(','),
     ...rows.map((r) =>
-      [r.guest_name, r.guest_email, r.guest_instagram, STATUS_TR[r.status] ?? r.status, r.reference ?? 'Davetli'].map(cell).join(','),
+      [r.guest_name, r.invited_by ?? '', STATUS_TR[r.status] ?? r.status, r.reference ?? 'Davetli'].map(cell).join(','),
     ),
   ];
   await audit(session.user, 'guests.export', null, { rows: rows.length });

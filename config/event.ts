@@ -49,6 +49,9 @@ export const event = {
 
   /** Toplam kapasite (onaylı biletler + onay bekleyen siparişler bu sayıyı aşamaz) */
   capacity: 250,
+  /** Bilet formundaki "Kim davet etti?" seçenekleri (yalnızca organizatörler) */
+  inviters: ['Metehan', 'Kaan', 'Derin', 'Elif', 'Doğa'],
+
   minAge: 18,
   dressCode: 'Elegant',
 

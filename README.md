@@ -2,6 +2,12 @@
 
 Yılbaşı partisi için bilet satışı, Revolut ile ödeme bildirimi, admin onayı, QR/barkodlu bilet ve kapıda okutma.
 
+> **Güncel akış (20 Kasım 2026):** Misafirlerden e-posta ve Instagram **toplanmıyor**. Formda yalnızca ad soyad ve
+> "Kim davet etti?" (organizatör listesi: `config/event.ts` → `inviters`) var. Onaylanan biletler misafire e-postayla
+> gitmez; referans koduyla açılan sipariş sayfasında (`/order/IST27-XXXX-XXXX`) görünür. Tek e-posta, yeni ödeme
+> bildiriminde adminlere giden bildirimdir. Aşağıda misafir e-postalarından söz eden eski satırlar bu nota göre okunmalı.
+> Daha önce kurulmuş bir veritabanı varsa `supabase/schema.sql` dosyasını yeniden çalıştırın (yeni sütunları ekler).
+
 **Teknoloji:** Next.js 15 (App Router) · TypeScript · Tailwind CSS 4 · Framer Motion · Supabase (Postgres + Storage) · Resend · `qrcode` · `bwip-js` · `html5-qrcode`
 
 | Sayfa | Ne işe yarar |
