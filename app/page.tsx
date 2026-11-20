@@ -6,6 +6,7 @@ import Countdown, { InlineCountdown } from '@/components/Countdown';
 import Footer from '@/components/Footer';
 import Header from '@/components/Header';
 import HeroVideo from '@/components/HeroVideo';
+import PartyScene from '@/components/PartyScene';
 import Reveal from '@/components/Reveal';
 import { remainingCapacity } from '@/lib/orders';
 import {
@@ -123,7 +124,11 @@ export default async function HomePage() {
             <p className="mt-3 max-w-2xl text-white/70">{t.pricing.subtitle}</p>
           </Reveal>
 
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
+          <Reveal delay={0.05} className="mt-10">
+            <PartyScene />
+          </Reveal>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
             {event.priceTiers.map((tier, i) => {
               const isCurrent = current?.id === tier.id;
               const isPast = !isCurrent && now.getTime() >= new Date(tier.until).getTime();

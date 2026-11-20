@@ -156,3 +156,160 @@ body {
 .wag {
   animation: runner-wag 0.12s ease-in-out infinite alternate;
 }
+
+/* Döner ve dans sahnesi */
+@keyframes doner-spin {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(16px);
+  }
+}
+@keyframes doner-knife {
+  from {
+    transform: rotate(-24deg);
+  }
+  to {
+    transform: rotate(26deg);
+  }
+}
+@keyframes doner-slice {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(14px, 54px) rotate(70deg);
+    opacity: 0;
+  }
+}
+@keyframes doner-steam {
+  0% {
+    transform: translateY(6px);
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.35;
+  }
+  100% {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+}
+@keyframes doner-glow {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes dance-bounce {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-9px);
+  }
+}
+@keyframes dance-sway {
+  from {
+    transform: rotate(-5deg);
+  }
+  to {
+    transform: rotate(5deg);
+  }
+}
+@keyframes arm-up-l {
+  from {
+    transform: rotate(135deg);
+  }
+  to {
+    transform: rotate(172deg);
+  }
+}
+@keyframes arm-up-r {
+  from {
+    transform: rotate(-135deg);
+  }
+  to {
+    transform: rotate(-172deg);
+  }
+}
+@keyframes arm-low-l {
+  from {
+    transform: rotate(25deg);
+  }
+  to {
+    transform: rotate(75deg);
+  }
+}
+@keyframes arm-low-r {
+  from {
+    transform: rotate(-25deg);
+  }
+  to {
+    transform: rotate(-75deg);
+  }
+}
+@keyframes disco-beams {
+  from {
+    transform: rotate(-9deg);
+  }
+  to {
+    transform: rotate(9deg);
+  }
+}
+@keyframes disco-twinkle {
+  from {
+    opacity: 0.2;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.doner-spin {
+  animation: doner-spin 0.7s linear infinite;
+}
+.doner-knife {
+  animation: doner-knife 0.9s ease-in-out infinite alternate;
+}
+.doner-slice {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: doner-slice 1.35s ease-in infinite;
+}
+.doner-steam {
+  animation: doner-steam 1.8s ease-out infinite;
+}
+.doner-glow {
+  animation: doner-glow 0.8s ease-in-out infinite alternate;
+}
+.dance-bounce {
+  animation: dance-bounce 0.42s ease-in-out infinite alternate;
+}
+.dance-sway {
+  animation: dance-sway 0.84s ease-in-out infinite alternate;
+}
+.arm-up-l {
+  animation: arm-up-l 0.42s ease-in-out infinite alternate;
+}
+.arm-up-r {
+  animation: arm-up-r 0.42s ease-in-out infinite alternate;
+}
+.arm-low-l {
+  animation: arm-low-l 0.42s ease-in-out infinite alternate;
+}
+.arm-low-r {
+  animation: arm-low-r 0.42s ease-in-out infinite alternate;
+}
+.disco-beams {
+  animation: disco-beams 2.4s ease-in-out infinite alternate;
+}
+.disco-twinkle {
+  animation: disco-twinkle 0.5s ease-in-out infinite alternate;
+}
