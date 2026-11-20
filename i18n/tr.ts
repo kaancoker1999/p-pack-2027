@@ -2,12 +2,12 @@ export const tr = {
   meta: {
     title: 'Istanbul 2027 — Yılbaşı Partisi · Vaniköy, İstanbul',
     description:
-      '31 Aralık 2026, Vaniköy Evleri. Sınırsız open bar, DJ’ler ve sabaha kadar süren bir yılbaşı gecesi. Biletini şimdi al.',
+      '31 Aralık 2026, Vaniköy Evleri. Sınırsız open bar, DJ’ler ve gün doğumuna kadar süren bir yılbaşı gecesi. Biletini şimdi al.',
   },
   nav: { tickets: 'Bilet Al', home: 'Ana sayfa', language: 'Dil' },
   hero: {
     eyebrow: 'Yılbaşı Gecesi',
-    untilMorning: 'sabaha kadar',
+    untilMorning: 'gün doğumu',
     cta: 'Bilet Al',
     countdownTitle: '2027’ye kalan süre',
     days: 'Gün',
@@ -54,7 +54,7 @@ export const tr = {
     included: 'Bilete dahil',
     inc1: 'Sınırsız open bar',
     inc2: 'Bütün DJ setleri',
-    inc3: 'Sabaha kadar giriş hakkı',
+    inc3: '22:00’den gün doğumuna kadar giriş',
     noRefund: 'İade yoktur; isim değişikliği yapılabilir.',
     cta: 'Bilet Al',
     remaining: 'Kalan kontenjan: {n}',
@@ -63,7 +63,9 @@ export const tr = {
     eyebrow: 'Mekan',
     title: 'Boğaz’ın kıyısında',
     openMaps: 'Google Maps’te aç',
-    doors: 'Kapı açılışı',
+    doors: 'Başlangıç',
+    ends: 'Bitiş',
+    sunrise: 'Gün doğumu',
     mapTitle: 'Mekan haritası',
   },
   footer: {

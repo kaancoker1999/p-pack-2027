@@ -40,12 +40,11 @@ export const event = {
   venue: {
     name: 'Vaniköy Evleri',
     area: 'Vaniköy – İstanbul',
-    // TODO: açık adresi yazın
-    address: 'Vaniköy, Üsküdar / İstanbul (açık adres eklenecek)',
-    // TODO: Google Maps paylaşım linkini yapıştırın
-    mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Vanik%C3%B6y+Evleri+%C4%B0stanbul',
-    // TODO: Google Maps > Paylaş > Harita yerleştir linkini yapıştırın
-    mapsEmbedUrl: 'https://www.google.com/maps?q=Vanik%C3%B6y%2C+%C3%9Csk%C3%BCdar%2C+%C4%B0stanbul&z=15&output=embed',
+    address: 'Kandilli, Vaniköy Evleri Sokağı, 34684 Üsküdar/İstanbul, Türkiye',
+    /** Adresin yanında gösterilen not */
+    addressNote: { tr: 'Kulüp binası', en: 'Clubhouse' },
+    mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Vanik%C3%B6y+Evleri+Soka%C4%9F%C4%B1%2C+Kandilli%2C+34684+%C3%9Csk%C3%BCdar%2F%C4%B0stanbul',
+    mapsEmbedUrl: 'https://www.google.com/maps?q=Vanik%C3%B6y+Evleri+Soka%C4%9F%C4%B1%2C+Kandilli%2C+34684+%C3%9Csk%C3%BCdar%2F%C4%B0stanbul&z=16&output=embed',
   },
 
   /** Toplam kapasite (onaylı biletler + onay bekleyen siparişler bu sayıyı aşamaz) */

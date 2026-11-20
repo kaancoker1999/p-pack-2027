@@ -4,12 +4,12 @@ export const en: Dict = {
   meta: {
     title: 'Istanbul 2027 — New Year’s Eve Party · Vaniköy, Istanbul',
     description:
-      '31 December 2026 at Vaniköy Evleri. Unlimited open bar, DJs and a New Year’s Eve that runs until morning. Get your ticket now.',
+      '31 December 2026 at Vaniköy Evleri. Unlimited open bar, DJs and a New Year’s Eve that runs until sunrise. Get your ticket now.',
   },
   nav: { tickets: 'Get Tickets', home: 'Home', language: 'Language' },
   hero: {
     eyebrow: 'New Year’s Eve',
-    untilMorning: 'until morning',
+    untilMorning: 'sunrise',
     cta: 'Get Tickets',
     countdownTitle: 'Countdown to 2027',
     days: 'Days',
@@ -56,7 +56,7 @@ export const en: Dict = {
     included: 'Included',
     inc1: 'Unlimited open bar',
     inc2: 'All DJ sets',
-    inc3: 'Entry until morning',
+    inc3: 'Entry from 22:00 until sunrise',
     noRefund: 'No refunds; name changes are allowed.',
     cta: 'Get Tickets',
     remaining: 'Spots left: {n}',
@@ -65,7 +65,9 @@ export const en: Dict = {
     eyebrow: 'Venue',
     title: 'On the shore of the Bosphorus',
     openMaps: 'Open in Google Maps',
-    doors: 'Doors open',
+    doors: 'Starts',
+    ends: 'Ends',
+    sunrise: 'Sunrise',
     mapTitle: 'Venue map',
   },
   footer: {

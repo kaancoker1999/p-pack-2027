@@ -115,33 +115,6 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* LINE-UP */}
-        <section id="lineup" className="border-y border-white/10 bg-gradient-to-b from-blood/25 via-coal to-ink">
-          <div className="mx-auto max-w-6xl px-4 py-20 text-center sm:px-6 sm:py-28">
-            <Reveal>
-              <p className="eyebrow">{t.lineup.eyebrow}</p>
-              <h2 className="section-title">{t.lineup.title}</h2>
-            </Reveal>
-            {event.djs.length === 0 ? (
-              <Reveal delay={0.1}>
-                <p className="gold-text mt-10 font-display text-2xl font-bold sm:text-4xl">{t.lineup.soon}</p>
-                <p className="mt-3 text-sm text-white/60">{t.lineup.soonText}</p>
-              </Reveal>
-            ) : (
-              <ul className="mt-10 space-y-6">
-                {event.djs.map((dj, i) => (
-                  <li key={dj.name}>
-                    <Reveal delay={i * 0.08}>
-                      <p className="font-display text-3xl font-bold uppercase tracking-wide text-white sm:text-6xl">{dj.name}</p>
-                      {dj.tag && <p className="mt-1 text-sm uppercase tracking-[0.3em] text-gold">{dj.tag}</p>}
-                    </Reveal>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </section>
-
         {/* BİLET & FİYAT */}
         <section id="tickets" className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
           <Reveal>
@@ -253,10 +226,20 @@ export default async function HomePage() {
               <p className="eyebrow">{t.venue.eyebrow}</p>
               <h2 className="section-title">{event.venue.name}</h2>
               <p className="mt-2 font-display text-xl text-gold">{t.venue.title}</p>
-              <p className="mt-5 text-white/75">{event.venue.address}</p>
-              <p className="mt-2 text-white/75">
-                {t.venue.doors}: {eventDate}, {formatEventTime()}
-              </p>
+              <p className="mt-5 text-white/85">{event.venue.address}</p>
+              <p className="mt-1 text-sm font-medium text-gold">{event.venue.addressNote[locale]}</p>
+              <dl className="mt-6 grid max-w-sm grid-cols-2 gap-3">
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                  <dt className="text-[11px] uppercase tracking-[0.2em] text-white/50">{t.venue.doors}</dt>
+                  <dd className="mt-1 font-display text-2xl font-bold">{formatEventTime()}</dd>
+                  <dd className="text-xs text-white/60">{eventDate}</dd>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                  <dt className="text-[11px] uppercase tracking-[0.2em] text-white/50">{t.venue.ends}</dt>
+                  <dd className="mt-1 font-display text-2xl font-bold">{t.venue.sunrise}</dd>
+                  <dd className="text-xs text-white/60">{formatDayMonth(new Date(event.countdownTo), locale)}</dd>
+                </div>
+              </dl>
               <a href={event.venue.mapsUrl} target="_blank" rel="noopener noreferrer" className="btn-gold mt-7">
                 {t.venue.openMaps}
               </a>
