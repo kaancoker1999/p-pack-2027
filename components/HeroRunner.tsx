@@ -5,7 +5,7 @@
 export default function HeroRunner() {
   return (
     <div className="runner-track pointer-events-none absolute bottom-3 left-0 sm:bottom-6" aria-hidden="true">
-      <svg viewBox="0 0 270 130" className="runner-bob h-[74px] w-auto drop-shadow-[0_6px_10px_rgba(0,0,0,0.6)] sm:h-[120px]">
+      <svg viewBox="0 0 270 130" className="runner-bob h-[104px] w-auto drop-shadow-[0_6px_10px_rgba(0,0,0,0.6)] sm:h-[170px]">
         {/* ───── Noel Baba ───── */}
         {/* Çuval */}
         <ellipse cx="30" cy="48" rx="20" ry="23" fill="#8a5a1c" />

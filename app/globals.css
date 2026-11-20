@@ -93,7 +93,7 @@ body {
 /* Koşan Noel Baba ve köpeği */
 @keyframes runner-cross {
   0% {
-    transform: translateX(-280px) scaleX(1);
+    transform: translateX(-380px) scaleX(1);
   }
   49.99% {
     transform: translateX(100vw) scaleX(1);
@@ -102,10 +102,10 @@ body {
     transform: translateX(100vw) scaleX(-1);
   }
   99.99% {
-    transform: translateX(-280px) scaleX(-1);
+    transform: translateX(-380px) scaleX(-1);
   }
   100% {
-    transform: translateX(-280px) scaleX(1);
+    transform: translateX(-380px) scaleX(1);
   }
 }
 @keyframes runner-bob {
