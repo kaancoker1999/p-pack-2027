@@ -194,7 +194,7 @@ export const en: Dict = {
     usedText: 'This ticket was used at {time}.',
     invitedBy: 'Invited by',
     notFound: 'Ticket not found.',
-    notFoundHint: 'The link may be incomplete or wrong. Use the link in your email.',
+    notFoundHint: 'The link may be incomplete or wrong. Use the “Open ticket” link on your order page.',
     brightness: 'Turn up your screen brightness at the door.',
     ticketNo: 'Ticket no',
   },

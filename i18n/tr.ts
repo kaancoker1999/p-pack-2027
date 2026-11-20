@@ -192,7 +192,7 @@ export const tr = {
     usedText: 'Bu bilet {time} itibarıyla kullanıldı.',
     invitedBy: 'Davet eden',
     notFound: 'Bilet bulunamadı.',
-    notFoundHint: 'Link eksik ya da hatalı olabilir. E-postanızdaki linki kullanın.',
+    notFoundHint: 'Link eksik ya da hatalı olabilir. Sipariş sayfanızdaki “Bileti aç” linkini kullanın.',
     brightness: 'Kapıda ekran parlaklığını artırın.',
     ticketNo: 'Bilet no',
   },
