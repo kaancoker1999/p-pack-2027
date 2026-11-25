@@ -27,6 +27,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       phone: r.phone,
       invitedBy: r.invited_by,
       payment: r.payment,
+      gender: r.gender,
       createdAt: r.created_at.toISOString(),
     })),
     log: log.map((l) => ({

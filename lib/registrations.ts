@@ -44,6 +44,12 @@ export async function setPayment(id: string, payment: Payment, admin: string): P
   });
 }
 
+/** Parti listesindeki rengi (cinsiyet tahminini) elle düzeltir. */
+export async function setGender(id: string, gender: 'm' | 'f' | 'u'): Promise<boolean> {
+  const rows = await db()`update registrations set gender = ${gender} where id = ${id} returning id`;
+  return rows.length > 0;
+}
+
 export async function deleteRegistration(id: string, admin: string): Promise<boolean> {
   return db().begin(async (tx) => {
     const rows = await tx<RegistrationRow[]>`delete from registrations where id = ${id} returning *`;

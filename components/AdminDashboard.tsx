@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
+import { guessGender, type Gender } from '@/lib/gender';
 
 type Payment = 'unpaid' | 'cash' | 'iban';
 type Registration = {
@@ -11,6 +12,8 @@ type Registration = {
   phone: string;
   invitedBy: string;
   payment: Payment;
+  /** Elle düzeltilmiş cinsiyet; null ise isimden tahmin edilir */
+  gender: Gender | null;
   createdAt: string;
 };
 type LogEntry = { id: number; admin: string; action: string; details: Record<string, unknown> | null; at: string };
@@ -29,6 +32,12 @@ const PAYMENT_STYLE: Record<Payment, string> = {
   cash: 'border-emerald-400/70 text-emerald-300',
   iban: 'border-sky-400/70 text-sky-300',
 };
+const GENDER: Record<Gender, { label: string; text: string; dot: string }> = {
+  m: { label: 'Erkek', text: 'text-sky-300', dot: 'bg-sky-400' },
+  f: { label: 'Kız', text: 'text-pink-300', dot: 'bg-pink-400' },
+  u: { label: 'Belirsiz', text: 'text-white/70', dot: 'bg-white/40' },
+};
+const NEXT_GENDER: Record<Gender, Gender> = { m: 'f', f: 'u', u: 'm' };
 const ACTIONS: Record<string, string> = {
   'admin.login': 'Admin girişi',
   'registration.delete': 'Kayıt silindi',
@@ -56,8 +65,19 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
   const [flash, setFlash] = useState<{ ok: boolean; text: string } | null>(null);
   // Sunucudan yanıt gelene kadar seçimi hemen göstermek için
   const [pending, setPending] = useState<Record<string, Payment>>({});
+  const [pendingGender, setPendingGender] = useState<Record<string, Gender>>({});
 
-  const regs = useMemo(() => data.registrations.map((r) => (pending[r.id] ? { ...r, payment: pending[r.id] } : r)), [data.registrations, pending]);
+  const regs = useMemo(
+    () =>
+      data.registrations.map((r) => ({
+        ...r,
+        payment: pending[r.id] ?? r.payment,
+        // Renk: elle düzeltme varsa o, yoksa isimden tahmin
+        g: pendingGender[r.id] ?? r.gender ?? guessGender(r.firstName),
+        guessed: !(pendingGender[r.id] ?? r.gender),
+      })),
+    [data.registrations, pending, pendingGender],
+  );
 
   const perInviter = useMemo(() => {
     const map = new Map<string, number>(data.inviters.map((n) => [n, 0]));
@@ -112,6 +132,26 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
     }
   }
 
+  async function cycleGender(r: Registration & { g: Gender }) {
+    const gender = NEXT_GENDER[r.g];
+    setPendingGender((p) => ({ ...p, [r.id]: gender }));
+    try {
+      const res = await fetch(`/api/admin/registrations/${r.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gender }),
+      });
+      if (!res.ok) throw new Error();
+      router.refresh();
+    } catch {
+      setFlash({ ok: false, text: `${r.firstName} ${r.lastName}: renk kaydedilemedi.` });
+      setPendingGender((p) => {
+        const { [r.id]: _drop, ...rest } = p;
+        return rest;
+      });
+    }
+  }
+
   async function remove(r: Registration) {
     if (!confirm(`${r.firstName} ${r.lastName} kaydı silinsin mi?\nBu işlem geri alınamaz.`)) return;
     setBusy(r.id);
@@ -136,6 +176,8 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
   const total = regs.length;
   const paid = counts.cash + counts.iban;
   const party = tab === 'party';
+  const genderCounts = { m: 0, f: 0, u: 0 };
+  for (const r of rows) genderCounts[r.g]++;
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-24 pt-6 sm:px-6">
@@ -237,12 +279,47 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
         </p>
       )}
 
-      {tab !== 'log' && (
+      {party && (
+        <>
+          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
+            {(['m', 'f', 'u'] as Gender[]).map((g) => (
+              <span key={g} className={`flex items-center gap-1.5 ${GENDER[g].text}`}>
+                <span className={`h-2.5 w-2.5 rounded-full ${GENDER[g].dot}`} />
+                {GENDER[g].label} <strong>{genderCounts[g]}</strong>
+              </span>
+            ))}
+            <span className="text-white/40">Renkler isimden tahmin edilir; yanlışsa noktaya tıklayıp düzeltin.</span>
+          </div>
+          {rows.length === 0 ? (
+            <p className="mt-3 rounded-2xl border border-white/10 px-3 py-10 text-center text-sm text-white/50">Kayıt bulunamadı.</p>
+          ) : (
+            <ol className="mt-3 grid gap-x-6 rounded-2xl border border-white/10 p-3 sm:grid-cols-2 lg:grid-cols-3">
+              {rows.map((r, i) => (
+                <li key={r.id} className="flex items-center gap-3 border-b border-white/5 px-2 py-2.5">
+                  <span className="w-7 shrink-0 text-right text-xs tabular-nums text-white/35">{i + 1}</span>
+                  <button
+                    type="button"
+                    onClick={() => cycleGender(r)}
+                    title={`${GENDER[r.g].label}${r.guessed ? ' (tahmin)' : ''} — değiştirmek için tıkla`}
+                    aria-label={`${r.firstName} ${r.lastName}: ${GENDER[r.g].label}, değiştir`}
+                    className={`h-3 w-3 shrink-0 rounded-full ${GENDER[r.g].dot} ring-offset-2 ring-offset-black hover:ring-2 hover:ring-white/50`}
+                  />
+                  <span className={`font-medium ${GENDER[r.g].text}`}>
+                    {r.firstName} {r.lastName}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </>
+      )}
+
+      {tab === 'list' && (
         <div className="mt-3 overflow-x-auto rounded-2xl border border-white/10">
           <table className="w-full min-w-[760px] text-left text-sm">
             <thead className="bg-white/[0.04] text-[11px] uppercase tracking-wider text-white/50">
               <tr>
-                {[...(party ? ['#'] : []), 'İsim', 'Soyad', 'Telefon', 'Referans kişisi', 'Ödeme durumu', ...(party ? [] : ['Kayıt zamanı']), ''].map((h) => (
+                {['İsim', 'Soyad', 'Telefon', 'Referans kişisi', 'Ödeme durumu', 'Kayıt zamanı', ''].map((h) => (
                   <th key={h} className="px-3 py-3 font-medium">
                     {h}
                   </th>
@@ -257,9 +334,8 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
                   </td>
                 </tr>
               )}
-              {rows.map((r, i) => (
+              {rows.map((r) => (
                 <tr key={r.id} className="border-t border-white/10">
-                  {party && <td className="px-3 py-3 tabular-nums text-white/40">{i + 1}</td>}
                   <td className="px-3 py-3 font-medium">{r.firstName}</td>
                   <td className="px-3 py-3 font-medium">{r.lastName}</td>
                   <td className="whitespace-nowrap px-3 py-3">
@@ -282,7 +358,7 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
                       ))}
                     </select>
                   </td>
-                  {!party && <td className="whitespace-nowrap px-3 py-3 text-white/70">{dt(r.createdAt)}</td>}
+                  <td className="whitespace-nowrap px-3 py-3 text-white/70">{dt(r.createdAt)}</td>
                   <td className="px-3 py-3 text-right">
                     <button onClick={() => remove(r)} disabled={busy !== null} className="rounded-lg border border-crimson/60 px-2.5 py-1 text-xs text-crimson hover:bg-crimson/10 disabled:opacity-40">
                       {busy === r.id ? '…' : 'Sil'}

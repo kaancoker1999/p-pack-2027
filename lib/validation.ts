@@ -37,6 +37,9 @@ export const adminLoginSchema = z.object({
   password: z.string().min(1).max(200),
 });
 
-export const paymentSchema = z.object({ payment: z.enum(['unpaid', 'cash', 'iban']) });
+/** Admin güncellemesi: ödeme durumu ve/veya parti listesindeki renk (cinsiyet) */
+export const registrationPatchSchema = z
+  .object({ payment: z.enum(['unpaid', 'cash', 'iban']).optional(), gender: z.enum(['m', 'f', 'u']).optional() })
+  .refine((v) => v.payment !== undefined || v.gender !== undefined, 'empty');
 
 export const uuidSchema = z.string().uuid();

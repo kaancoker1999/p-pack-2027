@@ -14,6 +14,8 @@ create table if not exists registrations (
 -- Önceki sürümle kurulmuş veritabanları için
 alter table registrations add column if not exists payment text not null default 'unpaid'
   check (payment in ('unpaid', 'cash', 'iban'));
+-- Parti listesindeki renk: boşsa isimden tahmin edilir; admin elle düzeltirse buraya yazılır.
+alter table registrations add column if not exists gender text check (gender in ('m', 'f', 'u'));
 create index if not exists registrations_created_idx on registrations (created_at desc);
 create index if not exists registrations_inviter_idx on registrations (invited_by);
 

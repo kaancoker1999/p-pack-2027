@@ -103,6 +103,12 @@ const csv2 = await page('/api/admin/export', admin);
 check('CSV ödeme durumlarını gösterir', csv2.includes('"Kaan","Çoker"," +90 532 111 22 33","Kaan","Nakit"') && csv2.includes('"Doğa","IBAN"') && (csv2.match(/"Ödenmedi"/g) ?? []).length === 3);
 check('Kaan → tekrar Ödenmedi', (await send('PATCH', `/api/admin/registrations/${idKaan}`, { payment: 'unpaid' }, admin)).status === 200 && (await page('/admin', admin)).includes('registration.payment'));
 
+step('5c. Parti listesi rengi (cinsiyet düzeltmesi)');
+check('boş güncelleme reddedilir', (await send('PATCH', `/api/admin/registrations/${idKaan}`, {}, admin)).status === 400);
+check('geçersiz değer reddedilir', (await send('PATCH', `/api/admin/registrations/${idKaan}`, { gender: 'x' }, admin)).status === 400);
+check('varsayılan: elle düzeltme yok (isimden tahmin edilir)', (await page('/admin', admin)).includes('\\"gender\\":null') );
+check('John → kız olarak düzeltilebilir', (await send('PATCH', `/api/admin/registrations/${idJohn}`, { gender: 'f' }, admin)).status === 200 && (await page('/admin', admin)).includes('\\"gender\\":\\"f\\"'));
+
 step('6. Kayıt silme');
 const id = panel.match(/\\"id\\":\\"([0-9a-f-]{36})\\",\\"firstName\\":\\"Ayşe\\"/)?.[1];
 const del = await send('DELETE', `/api/admin/registrations/${id}`, null, admin);

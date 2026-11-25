@@ -35,6 +35,8 @@ export type RegistrationRow = {
   invited_by: string;
   locale: 'tr' | 'en';
   payment: Payment;
+  /** Elle düzeltilmiş cinsiyet (parti listesi rengi); null ise isimden tahmin edilir */
+  gender: 'm' | 'f' | 'u' | null;
   created_at: Date;
 };
 
