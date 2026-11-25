@@ -26,6 +26,10 @@ export default function Footer({ t }: { t: Dict }) {
       </div>
       <div className="border-t border-white/5 py-5 text-center text-xs text-white/40">
         © {new Date().getFullYear()} {event.name}. {t.footer.rights}
+        <span className="mx-2">·</span>
+        <Link href="/admin" className="underline-offset-4 hover:text-white hover:underline">
+          {t.footer.admin}
+        </Link>
       </div>
     </footer>
   );

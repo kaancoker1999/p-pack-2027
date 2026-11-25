@@ -48,6 +48,7 @@ export const tr = {
     kvkk: 'KVKK Aydınlatma Metni',
     age: '18 yaş ve üzeri içindir. Girişte kimlik kontrolü yapılır.',
     rights: 'Tüm hakları saklıdır.',
+    admin: 'Admin girişi',
   },
   form: {
     title: 'Kayıt Ol',

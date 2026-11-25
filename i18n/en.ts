@@ -50,6 +50,7 @@ export const en: Dict = {
     kvkk: 'Privacy Notice (KVKK)',
     age: 'For ages 18 and over. IDs are checked at the door.',
     rights: 'All rights reserved.',
+    admin: 'Admin login',
   },
   form: {
     title: 'Sign Up',
