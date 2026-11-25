@@ -25,8 +25,8 @@ export const event = {
     mapsEmbedUrl: 'https://www.google.com/maps?q=Vanik%C3%B6y+Evleri+Soka%C4%9F%C4%B1%2C+Kandilli%2C+34684+%C3%9Csk%C3%BCdar%2F%C4%B0stanbul&z=16&output=embed',
   },
 
-  /** Hedef kişi sayısı (admin panelinde kayıt sayısının yanında gösterilir; kaydı sınırlamaz) */
-  capacity: 250,
+  /** Parti kaç kişilik: admin panelindeki parti listesi bu kadar sıra gösterir (kaydı sınırlamaz) */
+  capacity: 20,
   /** Kayıt formundaki "Referans kişisi" seçenekleri (yalnızca organizatörler) */
   inviters: ['Metehan', 'Kaan', 'Derin', 'Elif', 'Doğa'],
 

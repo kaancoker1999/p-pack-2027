@@ -33,9 +33,9 @@ const PAYMENT_STYLE: Record<Payment, string> = {
   iban: 'border-sky-400/70 text-sky-300',
 };
 const GENDER: Record<Gender, { label: string; text: string; dot: string; row: string }> = {
-  m: { label: 'Erkek', text: 'text-sky-300', dot: 'bg-[#bdd7ee]', row: 'bg-[#ddebf7]' },
-  f: { label: 'Kız', text: 'text-pink-300', dot: 'bg-[#f8cbdc]', row: 'bg-[#fce4ec]' },
-  u: { label: 'Belirsiz', text: 'text-white/70', dot: 'bg-white', row: 'bg-white' },
+  m: { label: 'Erkek', text: 'text-sky-300', dot: 'bg-sky-400', row: 'bg-sky-400/[0.07]' },
+  f: { label: 'Kız', text: 'text-pink-300', dot: 'bg-pink-400', row: 'bg-pink-400/[0.07]' },
+  u: { label: 'Belirsiz', text: 'text-white/80', dot: 'bg-white/40', row: '' },
 };
 const NEXT_GENDER: Record<Gender, Gender> = { m: 'f', f: 'u', u: 'm' };
 const ACTIONS: Record<string, string> = {
@@ -57,7 +57,7 @@ const byName = (a: Registration, b: Registration) =>
 
 export default function AdminDashboard({ data, initialQuery }: { data: AdminData; initialQuery: string }) {
   const router = useRouter();
-  const [tab, setTab] = useState<'list' | 'party' | 'log'>('list');
+  const [tab, setTab] = useState<'list' | 'party' | 'log'>('party');
   const [q, setQ] = useState(initialQuery);
   const [inviter, setInviter] = useState('ALL');
   const [payFilter, setPayFilter] = useState<'ALL' | 'PAID' | Payment>('ALL');
@@ -176,6 +176,8 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
   const total = regs.length;
   const paid = counts.cash + counts.iban;
   const party = tab === 'party';
+  // Parti listesindeki sıra sayısı: filtre yokken hedef kişi sayısı kadar satır gösterilir
+  const slots = q.trim() || inviter !== 'ALL' || payFilter !== 'ALL' ? 0 : data.capacity;
   const genderCounts = { m: 0, f: 0, u: 0 };
   for (const r of rows) genderCounts[r.g]++;
 
@@ -221,7 +223,7 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
                 key={name}
                 onClick={() => {
                   setInviter(inviter === name ? 'ALL' : name);
-                  if (tab === 'log') setTab('list');
+                  if (tab === 'log') setTab('party');
                 }}
                 className={`rounded-full border px-2.5 py-0.5 text-xs ${inviter === name ? 'border-gold bg-gold text-black' : 'border-white/15 hover:border-white/40'}`}
               >
@@ -242,8 +244,8 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
         <div className="flex rounded-full border border-white/15 p-0.5 text-sm">
           {(
             [
-              ['list', `Kayıtlar (${total})`],
               ['party', 'Parti listesi'],
+              ['list', `Kayıtlar (${total})`],
               ['log', 'İşlem kaydı'],
             ] as const
           ).map(([k, label]) => (
@@ -275,7 +277,7 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
       </div>
       {tab !== 'log' && (
         <p className="mt-3 text-xs text-white/50">
-          {party ? 'Tüm parti listesi, isme göre A→Z sıralı.' : 'Kayıtlar, en yeni üstte.'} {rows.length} kişi gösteriliyor.
+          {party ? `Parti listesi, isme göre A→Z sıralı. ${rows.length} / ${data.capacity} kişi.` : `Kayıtlar, en yeni üstte. ${rows.length} kişi gösteriliyor.`}
         </p>
       )}
 
@@ -284,52 +286,50 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
           <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
             {(['m', 'f', 'u'] as Gender[]).map((g) => (
               <span key={g} className={`flex items-center gap-1.5 ${GENDER[g].text}`}>
-                <span className={`h-3 w-5 border border-white/30 ${GENDER[g].dot}`} />
+                <span className={`h-2.5 w-2.5 rounded-full ${GENDER[g].dot}`} />
                 {GENDER[g].label} <strong>{genderCounts[g]}</strong>
               </span>
             ))}
-            <span className="text-white/40">Renkler isimden tahmin edilir; yanlışsa satır numarasına tıklayıp düzeltin.</span>
+            <span className="text-white/40">Renkler isimden tahmin edilir; yanlışsa sıra numarasına tıklayıp düzeltin.</span>
           </div>
-          {rows.length === 0 ? (
-            <p className="mt-3 rounded-2xl border border-white/10 px-3 py-10 text-center text-sm text-white/50">Kayıt bulunamadı.</p>
-          ) : (
-            <div className="mt-3 overflow-x-auto rounded-sm border border-[#b7b7b7] bg-white shadow-lg">
-              {/* Excel sayfası görünümü: sütun harfleri, satır numaraları, kılavuz çizgileri */}
-              <table className="w-full min-w-[420px] border-collapse font-[Calibri,Arial,sans-serif] text-[15px] text-black">
-                <thead>
-                  <tr className="bg-[#e6e6e6] text-xs font-normal text-[#444]">
-                    <th className="w-12 border border-[#b7b7b7] py-1" />
-                    <th className="border border-[#b7b7b7] py-1 font-normal">A</th>
-                    <th className="border border-[#b7b7b7] py-1 font-normal">B</th>
-                  </tr>
+            <div className="mt-3 overflow-hidden rounded-2xl border border-white/10">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-white/[0.04] text-[11px] uppercase tracking-wider text-white/50">
                   <tr>
-                    <th className="border border-[#b7b7b7] bg-[#e6e6e6] py-1.5 text-center text-xs font-normal text-[#444]">1</th>
-                    <th className="border border-[#d4d4d4] bg-[#f2f2f2] px-3 py-1.5 text-left font-bold">İsim</th>
-                    <th className="border border-[#d4d4d4] bg-[#f2f2f2] px-3 py-1.5 text-left font-bold">Soyad</th>
+                    <th className="w-14 px-3 py-3 text-right font-medium">Sıra</th>
+                    <th className="px-4 py-3 font-medium">İsim</th>
+                    <th className="px-4 py-3 font-medium">Soyad</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((r, i) => (
-                    <tr key={r.id} className={GENDER[r.g].row}>
-                      <td className="border border-[#b7b7b7] bg-[#e6e6e6] p-0 text-center text-xs text-[#444]">
-                        <button
-                          type="button"
-                          onClick={() => cycleGender(r)}
-                          title={`${GENDER[r.g].label}${r.guessed ? ' (tahmin)' : ''} — rengi değiştirmek için tıkla`}
-                          aria-label={`${r.firstName} ${r.lastName}: ${GENDER[r.g].label}, rengi değiştir`}
-                          className="block w-full py-1.5 hover:bg-[#d0d0d0]"
-                        >
-                          {i + 2}
-                        </button>
-                      </td>
-                      <td className="border border-[#d4d4d4] px-3 py-1.5">{r.firstName}</td>
-                      <td className="border border-[#d4d4d4] px-3 py-1.5">{r.lastName}</td>
-                    </tr>
-                  ))}
+                  {/* 1'den başlayan sıra; liste dolana kadar boş satırlar da görünür */}
+                  {Array.from({ length: Math.max(slots, rows.length) }, (_, i) => {
+                    const r = rows[i];
+                    return (
+                      <tr key={r?.id ?? `bos-${i}`} className={`border-t border-white/10 ${r ? GENDER[r.g].row : ''}`}>
+                        <td className="px-3 py-2.5 text-right tabular-nums text-white/40">
+                          {r ? (
+                            <button
+                              type="button"
+                              onClick={() => cycleGender(r)}
+                              title={`${GENDER[r.g].label}${r.guessed ? ' (tahmin)' : ''} — rengi değiştirmek için tıkla`}
+                              aria-label={`${r.firstName} ${r.lastName}: ${GENDER[r.g].label}, rengi değiştir`}
+                              className="rounded px-1.5 hover:bg-white/10 hover:text-white"
+                            >
+                              {i + 1}
+                            </button>
+                          ) : (
+                            <span className="px-1.5">{i + 1}</span>
+                          )}
+                        </td>
+                        <td className={`px-4 py-2.5 font-medium ${r ? GENDER[r.g].text : ''}`}>{r?.firstName ?? ''}</td>
+                        <td className={`px-4 py-2.5 font-medium ${r ? GENDER[r.g].text : ''}`}>{r?.lastName ?? ''}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
-          )}
         </>
       )}
 
