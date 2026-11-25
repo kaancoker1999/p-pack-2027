@@ -32,10 +32,10 @@ const PAYMENT_STYLE: Record<Payment, string> = {
   cash: 'border-emerald-400/70 text-emerald-300',
   iban: 'border-sky-400/70 text-sky-300',
 };
-const GENDER: Record<Gender, { label: string; text: string; dot: string }> = {
-  m: { label: 'Erkek', text: 'text-sky-300', dot: 'bg-sky-400' },
-  f: { label: 'Kız', text: 'text-pink-300', dot: 'bg-pink-400' },
-  u: { label: 'Belirsiz', text: 'text-white/70', dot: 'bg-white/40' },
+const GENDER: Record<Gender, { label: string; text: string; dot: string; row: string }> = {
+  m: { label: 'Erkek', text: 'text-sky-300', dot: 'bg-[#bdd7ee]', row: 'bg-[#ddebf7]' },
+  f: { label: 'Kız', text: 'text-pink-300', dot: 'bg-[#f8cbdc]', row: 'bg-[#fce4ec]' },
+  u: { label: 'Belirsiz', text: 'text-white/70', dot: 'bg-white', row: 'bg-white' },
 };
 const NEXT_GENDER: Record<Gender, Gender> = { m: 'f', f: 'u', u: 'm' };
 const ACTIONS: Record<string, string> = {
@@ -284,32 +284,51 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
           <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
             {(['m', 'f', 'u'] as Gender[]).map((g) => (
               <span key={g} className={`flex items-center gap-1.5 ${GENDER[g].text}`}>
-                <span className={`h-2.5 w-2.5 rounded-full ${GENDER[g].dot}`} />
+                <span className={`h-3 w-5 border border-white/30 ${GENDER[g].dot}`} />
                 {GENDER[g].label} <strong>{genderCounts[g]}</strong>
               </span>
             ))}
-            <span className="text-white/40">Renkler isimden tahmin edilir; yanlışsa noktaya tıklayıp düzeltin.</span>
+            <span className="text-white/40">Renkler isimden tahmin edilir; yanlışsa satır numarasına tıklayıp düzeltin.</span>
           </div>
           {rows.length === 0 ? (
             <p className="mt-3 rounded-2xl border border-white/10 px-3 py-10 text-center text-sm text-white/50">Kayıt bulunamadı.</p>
           ) : (
-            <ol className="mt-3 grid gap-x-6 rounded-2xl border border-white/10 p-3 sm:grid-cols-2 lg:grid-cols-3">
-              {rows.map((r, i) => (
-                <li key={r.id} className="flex items-center gap-3 border-b border-white/5 px-2 py-2.5">
-                  <span className="w-7 shrink-0 text-right text-xs tabular-nums text-white/35">{i + 1}</span>
-                  <button
-                    type="button"
-                    onClick={() => cycleGender(r)}
-                    title={`${GENDER[r.g].label}${r.guessed ? ' (tahmin)' : ''} — değiştirmek için tıkla`}
-                    aria-label={`${r.firstName} ${r.lastName}: ${GENDER[r.g].label}, değiştir`}
-                    className={`h-3 w-3 shrink-0 rounded-full ${GENDER[r.g].dot} ring-offset-2 ring-offset-black hover:ring-2 hover:ring-white/50`}
-                  />
-                  <span className={`font-medium ${GENDER[r.g].text}`}>
-                    {r.firstName} {r.lastName}
-                  </span>
-                </li>
-              ))}
-            </ol>
+            <div className="mt-3 overflow-x-auto rounded-sm border border-[#b7b7b7] bg-white shadow-lg">
+              {/* Excel sayfası görünümü: sütun harfleri, satır numaraları, kılavuz çizgileri */}
+              <table className="w-full min-w-[420px] border-collapse font-[Calibri,Arial,sans-serif] text-[15px] text-black">
+                <thead>
+                  <tr className="bg-[#e6e6e6] text-xs font-normal text-[#444]">
+                    <th className="w-12 border border-[#b7b7b7] py-1" />
+                    <th className="border border-[#b7b7b7] py-1 font-normal">A</th>
+                    <th className="border border-[#b7b7b7] py-1 font-normal">B</th>
+                  </tr>
+                  <tr>
+                    <th className="border border-[#b7b7b7] bg-[#e6e6e6] py-1.5 text-center text-xs font-normal text-[#444]">1</th>
+                    <th className="border border-[#d4d4d4] bg-[#f2f2f2] px-3 py-1.5 text-left font-bold">İsim</th>
+                    <th className="border border-[#d4d4d4] bg-[#f2f2f2] px-3 py-1.5 text-left font-bold">Soyad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((r, i) => (
+                    <tr key={r.id} className={GENDER[r.g].row}>
+                      <td className="border border-[#b7b7b7] bg-[#e6e6e6] p-0 text-center text-xs text-[#444]">
+                        <button
+                          type="button"
+                          onClick={() => cycleGender(r)}
+                          title={`${GENDER[r.g].label}${r.guessed ? ' (tahmin)' : ''} — rengi değiştirmek için tıkla`}
+                          aria-label={`${r.firstName} ${r.lastName}: ${GENDER[r.g].label}, rengi değiştir`}
+                          className="block w-full py-1.5 hover:bg-[#d0d0d0]"
+                        >
+                          {i + 2}
+                        </button>
+                      </td>
+                      <td className="border border-[#d4d4d4] px-3 py-1.5">{r.firstName}</td>
+                      <td className="border border-[#d4d4d4] px-3 py-1.5">{r.lastName}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </>
       )}
