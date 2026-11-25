@@ -1,6 +1,7 @@
 // Uçtan uca test: kayıt formu → admin listesi → CSV → silme (+ doğrulama, mükerrer kayıt ve yetki kontrolleri).
 //
-// Çalıştırma:  1) npm run db:dev -- --memory   2) npm run build && npm start -- -p 3100   3) npm run e2e
+// Çalıştırma:  1) rm -rf .dev-data   2) npm run build && npm start -- -p 3100   3) npm run e2e
+// (.env.local içinde LOCAL_STORE=1 olmalı: kayıtlar .dev-data/store klasörüne yazılır.)
 import { readFileSync } from 'node:fs';
 
 const BASE = process.env.E2E_BASE_URL ?? 'http://localhost:3100';
@@ -71,7 +72,7 @@ for (const p of people) {
 step('4. Admin koruması ve giriş');
 check('girişsiz /admin login sayfasına yönlenir', (await fetch(`${BASE}/admin`, { redirect: 'manual' })).status === 307);
 check('girişsiz CSV → 401', (await fetch(`${BASE}/api/admin/export`)).status === 401);
-check('girişsiz silme → 401', (await send('DELETE', '/api/admin/registrations/00000000-0000-4000-8000-000000000000')).status === 401);
+check('girişsiz silme → 401', (await send('DELETE', '/api/admin/registrations/905000000000')).status === 401);
 check('yanlış şifre → 401', (await post('/api/admin/login', { username: 'kaan', password: 'yanlis-sifre' })).status === 401);
 const login = await post('/api/admin/login', { username: 'kaan', password: env.E2E_ADMIN_PASSWORD });
 const admin = cookieOf(login);
@@ -91,14 +92,14 @@ check('CSV satırı: telefon ve referans', csv.includes('"Kaan","Çoker"," +90 5
 check('panelde WhatsApp linki yok', !/whatsapp|wa\.me/i.test(panel));
 
 step('5b. Ödeme durumu');
-const idOf = (html, first) => html.match(new RegExp(`\\\\"id\\\\":\\\\"([0-9a-f-]{36})\\\\",\\\\"firstName\\\\":\\\\"${first}\\\\"`))?.[1];
+const idOf = (html, first) => html.match(new RegExp(`\\\\"id\\\\":\\\\"(\\d{8,15})\\\\",\\\\"firstName\\\\":\\\\"${first}\\\\"`))?.[1];
 const idKaan = idOf(panel, 'Kaan');
 const idJohn = idOf(panel, 'John');
 check('girişsiz ödeme değişikliği → 401', (await send('PATCH', `/api/admin/registrations/${idKaan}`, { payment: 'cash' })).status === 401);
 check('geçersiz ödeme durumu reddedilir', (await send('PATCH', `/api/admin/registrations/${idKaan}`, { payment: 'kredi' }, admin)).status === 400);
 check('Kaan → Nakit', (await send('PATCH', `/api/admin/registrations/${idKaan}`, { payment: 'cash' }, admin)).status === 200, String(idKaan));
 check('John → IBAN', (await send('PATCH', `/api/admin/registrations/${idJohn}`, { payment: 'iban' }, admin)).status === 200);
-check('olmayan kayıt → 404', (await send('PATCH', '/api/admin/registrations/00000000-0000-4000-8000-000000000000', { payment: 'cash' }, admin)).status === 404);
+check('olmayan kayıt → 404', (await send('PATCH', '/api/admin/registrations/905000000000', { payment: 'cash' }, admin)).status === 404);
 const csv2 = await page('/api/admin/export', admin);
 check('CSV ödeme durumlarını gösterir', csv2.includes('"Kaan","Çoker"," +90 532 111 22 33","Kaan","Nakit"') && csv2.includes('"Doğa","IBAN"') && (csv2.match(/"Ödenmedi"/g) ?? []).length === 3);
 check('Kaan → tekrar Ödenmedi', (await send('PATCH', `/api/admin/registrations/${idKaan}`, { payment: 'unpaid' }, admin)).status === 200 && (await page('/admin', admin)).includes('registration.payment'));
@@ -110,7 +111,7 @@ check('varsayılan: elle düzeltme yok (isimden tahmin edilir)', (await page('/a
 check('John → kız olarak düzeltilebilir', (await send('PATCH', `/api/admin/registrations/${idJohn}`, { gender: 'f' }, admin)).status === 200 && (await page('/admin', admin)).includes('\\"gender\\":\\"f\\"'));
 
 step('6. Kayıt silme');
-const id = panel.match(/\\"id\\":\\"([0-9a-f-]{36})\\",\\"firstName\\":\\"Ayşe\\"/)?.[1];
+const id = idOf(panel, 'Ayşe');
 const del = await send('DELETE', `/api/admin/registrations/${id}`, null, admin);
 check('admin kaydı silebilir', del.status === 200, `${del.status} ${id}`);
 check('aynı kayıt ikinci kez silinemez (404)', (await send('DELETE', `/api/admin/registrations/${id}`, null, admin)).status === 404);

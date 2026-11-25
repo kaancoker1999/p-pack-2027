@@ -1,32 +1,29 @@
 {
   "name": "p-pack-2027",
   "version": "1.0.0",
-  "description": "P-PACK 2027 bilet satış sitesi",
+  "description": "Istanbul 2027 yılbaşı partisi kayıt sitesi",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "db:dev": "node scripts/dev-db.mjs",
     "hash-password": "node scripts/hash-password.mjs",
-    "poster": "node scripts/make-poster.mjs",
-    "e2e": "node scripts/e2e.mjs"
+    "e2e": "node scripts/e2e.mjs",
+    "poster": "node scripts/make-poster.mjs"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@netlify/blobs": "^11.1.11",
     "bcryptjs": "^3.0.3",
     "framer-motion": "^14.14.0",
     "jose": "^6.2.18",
     "next": "^15.5.29",
-    "postgres": "^4.1.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.17",
-    "@electric-sql/pglite-socket": "^0.2.20",
     "@tailwindcss/postcss": "^4.3.5",
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",

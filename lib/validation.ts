@@ -42,4 +42,5 @@ export const registrationPatchSchema = z
   .object({ payment: z.enum(['unpaid', 'cash', 'iban']).optional(), gender: z.enum(['m', 'f', 'u']).optional() })
   .refine((v) => v.payment !== undefined || v.gender !== undefined, 'empty');
 
-export const uuidSchema = z.string().uuid();
+/** Kayıt kimliği: telefonun rakamları */
+export const registrationIdSchema = z.string().regex(/^\d{8,15}$/);

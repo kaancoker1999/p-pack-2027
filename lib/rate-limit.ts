@@ -1,30 +1,36 @@
 import { createHash } from 'crypto';
-import { db } from './db';
+import { kv } from './store';
 
 export function clientIp(req: Request): string {
-  const xff = req.headers.get('x-forwarded-for');
-  return xff?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
+  return (
+    req.headers.get('x-nf-client-connection-ip') ||
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    req.headers.get('x-real-ip') ||
+    'unknown'
+  );
 }
 
 /**
- * Postgres tabanlı sabit pencereli sınırlama (serverless'ta bellek paylaşılmadığı için).
- * İzin varsa true döner. IP açık saklanmaz, hash'lenir.
+ * Sabit pencereli deneme sınırı (depo tabanlı; sunucular arasında paylaşılır).
+ * İzin varsa true döner. IP açık saklanmaz, hash'lenir. Sayaç okuma-yazma atomik olmadığı
+ * için aynı anda gelen isteklerde sınır birkaç deneme esneyebilir; spam ve şifre denemelerini
+ * yavaşlatmak için yeterlidir.
  */
 export async function rateLimit(scope: string, req: Request, limit: number, windowSec: number): Promise<boolean> {
-  const sql = db();
+  const store = kv();
   const ipHash = createHash('sha256')
     .update(`${process.env.SESSION_SECRET ?? ''}:${clientIp(req)}`)
     .digest('hex')
-    .slice(0, 32);
-  const windowStart = new Date(Math.floor(Date.now() / (windowSec * 1000)) * windowSec * 1000);
-  const rows = await sql<{ count: number }[]>`
-    insert into rate_limits (key, window_start, count)
-    values (${`${scope}:${ipHash}`}, ${windowStart}, 1)
-    on conflict (key, window_start) do update set count = rate_limits.count + 1
-    returning count
-  `;
-  if (Math.random() < 0.02) {
-    await sql`delete from rate_limits where window_start < now() - interval '1 day'`.catch(() => {});
+    .slice(0, 24);
+  const window = Math.floor(Date.now() / (windowSec * 1000));
+  const key = `rl/${scope}/${window}/${ipHash}`;
+  const count = ((await store.get<number>(key)) ?? 0) + 1;
+  await store.set(key, count);
+
+  // Arada bir eski pencerelerin sayaçlarını temizle
+  if (Math.random() < 0.03) {
+    const old = (await store.list(`rl/${scope}/`)).filter((k) => Number(k.split('/')[2]) < window - 1);
+    await Promise.all(old.slice(0, 200).map((k) => store.del(k)));
   }
-  return rows[0].count <= limit;
+  return count <= limit;
 }

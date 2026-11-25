@@ -19,13 +19,13 @@ const PAYMENT_TR = { unpaid: 'Ödenmedi', cash: 'Nakit', iban: 'IBAN' } as const
 /** Parti listesi CSV (isme göre sıralı): sıra, ad, soyad, telefon, referans kişisi, ödeme durumu, kayıt zamanı */
 export const GET = adminRoute(async (_req, session) => {
   const rows = (await listRegistrations()).sort(
-    (a, b) => a.first_name.localeCompare(b.first_name, 'tr') || a.last_name.localeCompare(b.last_name, 'tr'),
+    (a, b) => a.firstName.localeCompare(b.firstName, 'tr') || a.lastName.localeCompare(b.lastName, 'tr'),
   );
   const lines = [
     ['Sıra', 'Ad', 'Soyad', 'Telefon', 'Referans kişisi', 'Ödeme durumu', 'Kayıt zamanı'].map(cell).join(','),
     // Telefon başındaki + Excel'de formül sayılmasın diye boşluklu biçimde ve tırnak içinde yazılır.
     ...rows.map((r, i) =>
-      [String(i + 1), r.first_name, r.last_name, ` ${prettyPhone(r.phone)}`, r.invited_by, PAYMENT_TR[r.payment], when(r.created_at)].map(cell).join(','),
+      [String(i + 1), r.firstName, r.lastName, ` ${prettyPhone(r.phone)}`, r.invitedBy, PAYMENT_TR[r.payment], when(new Date(r.createdAt))].map(cell).join(','),
     ),
   ];
   await audit(session.user, 'registrations.export', null, { rows: rows.length });

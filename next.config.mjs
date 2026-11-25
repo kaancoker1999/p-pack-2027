@@ -8,7 +8,12 @@ const nextConfig = {
     NEXT_PUBLIC_HERO_WEBM: existsSync('public/video/hero.webm') ? '1' : '',
     NEXT_PUBLIC_HERO_MP4: existsSync('public/video/hero.mp4') ? '1' : '',
   },
-  serverExternalPackages: ['postgres'],
+  // Site Netlify'a taşındı: eski Vercel adresine gelenler yeni adrese yönlenir.
+  async redirects() {
+    return process.env.VERCEL
+      ? [{ source: '/:path*', destination: 'https://istanbul-2027.netlify.app/:path*', permanent: false }]
+      : [];
+  },
   async headers() {
     return [
       {
