@@ -60,7 +60,7 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
   const [tab, setTab] = useState<'list' | 'party' | 'log'>('party');
   const [q, setQ] = useState(initialQuery);
   const [inviter, setInviter] = useState('ALL');
-  const [payFilter, setPayFilter] = useState<'ALL' | 'PAID' | Payment>('ALL');
+  const [payFilter, setPayFilter] = useState<'ALL' | 'PAID' | 'unpaid'>('ALL');
   const [busy, setBusy] = useState<string | null>(null);
   const [flash, setFlash] = useState<{ ok: boolean; text: string } | null>(null);
   // Sunucudan yanıt gelene kadar seçimi hemen göstermek için
@@ -96,7 +96,8 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
     const digits = q.replace(/\D/g, '').replace(/^0/, '');
     return regs.filter((r) => {
       if (inviter !== 'ALL' && r.invitedBy !== inviter) return false;
-      if (payFilter === 'PAID' ? r.payment === 'unpaid' : payFilter !== 'ALL' && r.payment !== payFilter) return false;
+      if (payFilter === 'PAID' && r.payment === 'unpaid') return false;
+      if (payFilter === 'unpaid' && r.payment !== 'unpaid') return false;
       if (!needle) return true;
       if (norm(`${r.firstName} ${r.lastName} ${r.invitedBy}`).includes(needle)) return true;
       return digits.length >= 3 && r.phone.replace(/\D/g, '').includes(digits);
@@ -266,11 +267,9 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
               ))}
             </select>
             <select value={payFilter} onChange={(e) => setPayFilter(e.target.value as typeof payFilter)} className="field w-auto py-2 text-sm" aria-label="Ödeme filtresi">
-              <option value="ALL">Tüm ödeme durumları</option>
-              <option value="PAID">Ödeyenler (nakit + IBAN)</option>
-              <option value="unpaid">Ödenmedi</option>
-              <option value="cash">Nakit</option>
-              <option value="iban">IBAN</option>
+              <option value="ALL">Herkes</option>
+              <option value="PAID">Ödemişler</option>
+              <option value="unpaid">Ödememişler</option>
             </select>
           </>
         )}
