@@ -25,8 +25,8 @@ export const tr = {
     donerText: 'Dans pistinin tam ortasında döner ustası. Acıkan sıraya.',
     djTitle: 'DJ’ler',
     djText: 'Birden fazla DJ, 22:00’den gün doğana kadar kesintisiz müzik.',
-    dressTitle: 'Dress Code: Elegant',
-    dressText: 'Yılın son gecesine yakışır şıklıkta gel. Gece kıyafetleri, takımlar, ışıltı serbest.',
+    dressTitle: 'Dress Code: New Year’s Concept',
+    dressText: 'Yılbaşı konsepti: iyi giyin. Yılın son gecesine yakışır şıklıkta gel; ışıltı serbest.',
   },
   join: {
     eyebrow: 'Kayıt',

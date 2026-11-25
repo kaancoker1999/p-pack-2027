@@ -31,7 +31,7 @@ export const event = {
   inviters: ['Metehan', 'Kaan', 'Derin', 'Elif', 'Doğa'],
 
   minAge: 18,
-  dressCode: 'Elegant',
+  dressCode: 'New Year’s Concept',
 
   /** İletişim adresi (örnek) */
   contactEmail: 'tickets@example.com',

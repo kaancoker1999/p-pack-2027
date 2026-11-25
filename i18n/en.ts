@@ -27,8 +27,8 @@ export const en: Dict = {
     donerText: 'A döner master right in the middle of the dance floor.',
     djTitle: 'DJs',
     djText: 'Multiple DJs and non-stop music from 22:00 until sunrise.',
-    dressTitle: 'Dress Code: Elegant',
-    dressText: 'Dress for the last night of the year. Evening wear, suits and sparkle welcome.',
+    dressTitle: 'Dress Code: New Year’s Concept',
+    dressText: 'New Year’s concept: dress well. Come dressed for the last night of the year; sparkle welcome.',
   },
   join: {
     eyebrow: 'Sign up',
