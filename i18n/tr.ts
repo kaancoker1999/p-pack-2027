@@ -26,7 +26,7 @@ export const tr = {
     djTitle: 'DJ’ler',
     djText: 'Birden fazla DJ, 22:00’den gün doğana kadar kesintisiz müzik.',
     dressTitle: 'Dress Code: New Year’s Concept',
-    dressText: 'Yılbaşı konsepti: iyi giyin. Yılın son gecesine yakışır şıklıkta gel; ışıltı serbest.',
+    dressText: 'Yılbaşı konsepti: iyi giyin, yeter. Takım elbise ya da gece elbisesi şart değil; ışıltı serbest.',
   },
   join: {
     eyebrow: 'Kayıt',

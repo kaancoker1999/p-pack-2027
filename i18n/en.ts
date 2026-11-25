@@ -28,7 +28,7 @@ export const en: Dict = {
     djTitle: 'DJs',
     djText: 'Multiple DJs and non-stop music from 22:00 until sunrise.',
     dressTitle: 'Dress Code: New Year’s Concept',
-    dressText: 'New Year’s concept: dress well. Come dressed for the last night of the year; sparkle welcome.',
+    dressText: 'New Year’s concept: just dress well. No suits or gowns required; sparkle welcome.',
   },
   join: {
     eyebrow: 'Sign up',

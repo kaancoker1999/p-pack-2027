@@ -427,3 +427,14 @@ body {
 .el-chandelier {
   animation: el-chandelier 2.8s ease-in-out infinite alternate;
 }
+@keyframes el-balloon {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-7px);
+  }
+}
+.el-balloon {
+  animation: el-balloon 2.2s ease-in-out infinite alternate;
+}
