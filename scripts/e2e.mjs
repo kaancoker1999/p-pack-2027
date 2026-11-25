@@ -83,8 +83,25 @@ check('panel 5 kaydı listeler', ['Çoker', 'Yıldız', 'Öztürk', 'Neil', 'Şa
 check('telefonlar tek biçimde saklandı', ['+905321112233', '+905332223344', '+905343334455', '+447911123456', '+905354445566'].every((x) => panel.includes(x)));
 check('referans kişileri kayıtlı', panel.includes('\\"invitedBy\\":\\"Metehan\\"') && panel.includes('\\"invitedBy\\":\\"Doğa\\"'));
 const csv = await page('/api/admin/export', admin);
-check('CSV başlıkları', csv.includes('"Ad","Soyad","Telefon","Referans kişisi","Kayıt zamanı"'));
-check('CSV satırları', csv.includes('"Kaan","Çoker"," +90 532 111 22 33","Kaan"') && csv.includes('"John","O\'Neil"," +447911123456","Doğa"') && csv.trim().split('\r\n').length === 6, String(csv.trim().split('\r\n').length));
+check('CSV başlıkları', csv.includes('"Sıra","Ad","Soyad","Telefon","Referans kişisi","Ödeme durumu","Kayıt zamanı"'));
+const csvLines = csv.trim().split('\r\n');
+check('CSV: 5 kişi, hepsi "Ödenmedi"', csvLines.length === 6 && csvLines.slice(1).every((l) => l.includes('"Ödenmedi"')), String(csvLines.length));
+check('CSV isme göre sıralı (Ayşe, John, Kaan, Mehmet Ali, Zeynep)', ['Ayşe', 'John', 'Kaan', 'Mehmet Ali', 'Zeynep'].every((n, i) => csvLines[i + 1].startsWith(`"${i + 1}","${n}"`)), csvLines.slice(1).map((l) => l.split(',')[1]).join(' '));
+check('CSV satırı: telefon ve referans', csv.includes('"Kaan","Çoker"," +90 532 111 22 33","Kaan"') && csv.includes('"John","O\'Neil"," +447911123456","Doğa"'));
+check('panelde WhatsApp linki yok', !/whatsapp|wa\.me/i.test(panel));
+
+step('5b. Ödeme durumu');
+const idOf = (html, first) => html.match(new RegExp(`\\\\"id\\\\":\\\\"([0-9a-f-]{36})\\\\",\\\\"firstName\\\\":\\\\"${first}\\\\"`))?.[1];
+const idKaan = idOf(panel, 'Kaan');
+const idJohn = idOf(panel, 'John');
+check('girişsiz ödeme değişikliği → 401', (await send('PATCH', `/api/admin/registrations/${idKaan}`, { payment: 'cash' })).status === 401);
+check('geçersiz ödeme durumu reddedilir', (await send('PATCH', `/api/admin/registrations/${idKaan}`, { payment: 'kredi' }, admin)).status === 400);
+check('Kaan → Nakit', (await send('PATCH', `/api/admin/registrations/${idKaan}`, { payment: 'cash' }, admin)).status === 200, String(idKaan));
+check('John → IBAN', (await send('PATCH', `/api/admin/registrations/${idJohn}`, { payment: 'iban' }, admin)).status === 200);
+check('olmayan kayıt → 404', (await send('PATCH', '/api/admin/registrations/00000000-0000-4000-8000-000000000000', { payment: 'cash' }, admin)).status === 404);
+const csv2 = await page('/api/admin/export', admin);
+check('CSV ödeme durumlarını gösterir', csv2.includes('"Kaan","Çoker"," +90 532 111 22 33","Kaan","Nakit"') && csv2.includes('"Doğa","IBAN"') && (csv2.match(/"Ödenmedi"/g) ?? []).length === 3);
+check('Kaan → tekrar Ödenmedi', (await send('PATCH', `/api/admin/registrations/${idKaan}`, { payment: 'unpaid' }, admin)).status === 200 && (await page('/admin', admin)).includes('registration.payment'));
 
 step('6. Kayıt silme');
 const id = panel.match(/\\"id\\":\\"([0-9a-f-]{36})\\",\\"firstName\\":\\"Ayşe\\"/)?.[1];

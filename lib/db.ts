@@ -24,6 +24,9 @@ export function db(): Sql {
   return g.__ppackSql;
 }
 
+/** Ödeme durumu: ödenmedi / nakit / IBAN (admin panelinden işaretlenir) */
+export type Payment = 'unpaid' | 'cash' | 'iban';
+
 export type RegistrationRow = {
   id: string;
   first_name: string;
@@ -31,6 +34,7 @@ export type RegistrationRow = {
   phone: string;
   invited_by: string;
   locale: 'tr' | 'en';
+  payment: Payment;
   created_at: Date;
 };
 

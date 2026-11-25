@@ -8,8 +8,12 @@ create table if not exists registrations (
   phone       text not null unique,          -- +905321234567 biçiminde; aynı numara iki kez kaydolamaz
   invited_by  text not null,                 -- referans kişisi (organizatör adı)
   locale      text not null default 'tr' check (locale in ('tr', 'en')),
+  payment     text not null default 'unpaid' check (payment in ('unpaid', 'cash', 'iban')),  -- admin işaretler
   created_at  timestamptz not null default now()
 );
+-- Önceki sürümle kurulmuş veritabanları için
+alter table registrations add column if not exists payment text not null default 'unpaid'
+  check (payment in ('unpaid', 'cash', 'iban'));
 create index if not exists registrations_created_idx on registrations (created_at desc);
 create index if not exists registrations_inviter_idx on registrations (invited_by);
 

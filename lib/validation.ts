@@ -37,4 +37,6 @@ export const adminLoginSchema = z.object({
   password: z.string().min(1).max(200),
 });
 
+export const paymentSchema = z.object({ payment: z.enum(['unpaid', 'cash', 'iban']) });
+
 export const uuidSchema = z.string().uuid();

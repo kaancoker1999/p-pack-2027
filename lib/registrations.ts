@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { audit } from './audit';
-import { db, type RegistrationRow } from './db';
+import { db, type Payment, type RegistrationRow } from './db';
 
 export type NewRegistration = {
   firstName: string;
@@ -29,6 +29,19 @@ export async function createRegistration(input: NewRegistration): Promise<{ row:
 
 export async function listRegistrations(): Promise<RegistrationRow[]> {
   return db()<RegistrationRow[]>`select * from registrations order by created_at desc, id`;
+}
+
+/** Ödeme durumunu günceller; değişiklik kayda geçer. */
+export async function setPayment(id: string, payment: Payment, admin: string): Promise<boolean> {
+  return db().begin(async (tx) => {
+    const [before] = await tx<RegistrationRow[]>`select * from registrations where id = ${id} for update`;
+    if (!before) return false;
+    if (before.payment !== payment) {
+      await tx`update registrations set payment = ${payment} where id = ${id}`;
+      await audit(admin, 'registration.payment', id, { name: `${before.first_name} ${before.last_name}`, from: before.payment, to: payment }, tx);
+    }
+    return true;
+  });
 }
 
 export async function deleteRegistration(id: string, admin: string): Promise<boolean> {

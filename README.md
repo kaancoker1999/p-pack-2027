@@ -9,7 +9,7 @@ misafir adını, soyadını, telefonunu ve referans kişisini bırakır; gerisin
 |---|---|
 | `/` | Tanıtım: geri sayım, "gece neler var" görselleri, mekan ve harita |
 | `/register` | Kayıt formu: isim, soyad, telefon, referans kişisi |
-| `/admin` | Kayıt listesi (arama, referansa göre filtre, silme, CSV, işlem kaydı) |
+| `/admin` | Kayıtlar (en yeni üstte), isme göre sıralı parti listesi, ödeme durumu (ödenmedi / nakit / IBAN), arama, filtre, silme, CSV, işlem kaydı |
 | `/kvkk` | Aydınlatma metni |
 
 > Depo ve Vercel projesi eski adla (`p-pack-2027`) duruyor; sitedeki ad "Istanbul 2027".
@@ -94,7 +94,8 @@ npm run hash-password -- ali "guclu-bir-sifre"
 - **Kayıt:** Form sunucuda zod ile doğrulanır. Telefon tek biçime çevrilir (`+905321234567`); yurt dışı numaraları ülke koduyla yazılır.
 - **Mükerrer kayıt:** Telefon numarası benzersizdir. Aynı numara ikinci kez kaydolursa yeni satır açılmaz, kişiye "zaten kayıtlısın" denir.
 - **Spam koruması:** Honeypot alanı ve IP başına 10 dakikada 30 deneme sınırı (Postgres tabanlı).
-- **Admin:** Oturum httpOnly çerezdir; `/admin` ve `/api/admin/*` hem middleware'de hem rota içinde korunur. Silme ve CSV indirme işlemleri kayda geçer.
+- **Ödeme durumu:** Her kayıt "Ödenmedi" olarak açılır; adminler panelden Nakit ya da IBAN olarak işaretler. Ödeme siteden alınmaz, bu yalnızca takip içindir.
+- **Admin:** Oturum httpOnly çerezdir; `/admin` ve `/api/admin/*` hem middleware'de hem rota içinde korunur. Silme, ödeme durumu değişikliği ve CSV indirme işlemleri kayda geçer.
 
 ## 8. Test
 
