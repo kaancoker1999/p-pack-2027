@@ -5,7 +5,7 @@ import { SignJWT, jwtVerify } from 'jose';
 export const SESSION_COOKIE = 'ppack_session';
 export const SESSION_HOURS = 12;
 
-export type Role = 'admin' | 'staff';
+export type Role = 'admin';
 export type Session = { user: string; role: Role };
 
 function key(): Uint8Array {
@@ -28,7 +28,7 @@ export async function verifySessionToken(token: string | undefined): Promise<Ses
   try {
     const { payload } = await jwtVerify(token, key(), { algorithms: ['HS256'] });
     const role = payload.role;
-    if (typeof payload.sub !== 'string' || (role !== 'admin' && role !== 'staff')) return null;
+    if (typeof payload.sub !== 'string' || role !== 'admin') return null;
     return { user: payload.sub, role };
   } catch {
     return null;

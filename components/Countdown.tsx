@@ -51,18 +51,3 @@ export default function Countdown({ target, labels, doneText }: { target: string
     </div>
   );
 }
-
-/** Fiyat artışı için tek satırlık küçük geri sayım: "12g 04s 33d 10sn" */
-export function InlineCountdown({ target, labels }: { target: string; labels: Labels }) {
-  const left = useRemaining(target);
-  if (left === null) return <span className="tabular-nums">––</span>;
-  if (left <= 0) return null;
-  const p = parts(left);
-  const unit = (l: string) => l.toLocaleLowerCase();
-  return (
-    <span className="tabular-nums">
-      {p.d > 0 && `${p.d} ${unit(labels.days)} `}
-      {pad(p.h)} {unit(labels.hours)} {pad(p.m)} {unit(labels.minutes)} {pad(p.s)} {unit(labels.seconds)}
-    </span>
-  );
-}

@@ -25,12 +25,6 @@ export async function verifyAdmin(username: string, password: string): Promise<s
   return hash && ok ? user : null;
 }
 
-export async function verifyCheckinPassword(password: string): Promise<boolean> {
-  const hash = (process.env.CHECKIN_PASSWORD_HASH ?? '').trim();
-  const ok = await bcrypt.compare(password, hash.startsWith('$2') ? hash : DUMMY_HASH);
-  return hash.startsWith('$2') && ok;
-}
-
 export async function getSession(): Promise<Session | null> {
   const jar = await cookies();
   return verifySessionToken(jar.get(SESSION_COOKIE)?.value);
@@ -39,9 +33,4 @@ export async function getSession(): Promise<Session | null> {
 export async function requireAdmin(): Promise<Session | null> {
   const s = await getSession();
   return s?.role === 'admin' ? s : null;
-}
-
-/** Kapı personeli ya da admin */
-export async function requireStaff(): Promise<Session | null> {
-  return getSession();
 }

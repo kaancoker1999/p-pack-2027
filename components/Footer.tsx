@@ -13,14 +13,9 @@ export default function Footer({ t }: { t: Dict }) {
         <div className="space-y-2">
           <p>
             {t.footer.contact}:{' '}
-            <a href={`mailto:${event.ticketsEmail}`} className="text-white underline-offset-4 hover:underline">
-              {event.ticketsEmail}
+            <a href={`mailto:${event.contactEmail}`} className="text-white underline-offset-4 hover:underline">
+              {event.contactEmail}
             </a>
-          </p>
-          <p>
-            <Link href="/order" className="text-white underline-offset-4 hover:underline">
-              {t.footer.trackOrder}
-            </Link>
           </p>
           <p>
             <Link href="/kvkk" className="text-white underline-offset-4 hover:underline">

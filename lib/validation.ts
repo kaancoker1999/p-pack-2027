@@ -1,51 +1,40 @@
 import { z } from 'zod';
 import { event } from '@/config/event';
+import { normalizePhone } from './phone';
 
-const name = z
+/** Ad / soyad: harf, boşluk, kesme ve tire */
+const namePart = z
   .string()
   .trim()
-  .min(3)
-  .max(80)
+  .min(2)
+  .max(50)
   .regex(/^[\p{L}\p{M}'’.\- ]+$/u)
-  .refine((s) => s.split(/\s+/).length >= 2, 'full_name');
+  .transform((s) => s.replace(/\s+/g, ' '));
 
-/** "Kim davet etti?" — yalnızca config'deki organizatör adlarından biri olabilir. */
+const phone = z
+  .string()
+  .max(30)
+  .transform((s) => normalizePhone(s))
+  .refine((v): v is string => v !== null, 'phone');
+
+/** Referans kişisi: yalnızca config'deki organizatör adlarından biri olabilir. */
 const invitedBy = z.string().refine((v) => (event.inviters as readonly string[]).includes(v), 'inviter');
 
-export const guestSchema = z.object({ name });
-
-export const checkoutSchema = z.object({
-  guests: z.array(guestSchema).min(1).max(250),
+export const registerSchema = z.object({
+  firstName: namePart,
+  lastName: namePart,
+  phone,
   invitedBy,
-  currency: z.enum(['TRY', 'EUR']),
   locale: z.enum(['tr', 'en']),
-  consents: z.object({
-    age: z.literal(true),
-    noRefund: z.literal(true),
-    kvkk: z.literal(true),
-  }),
+  consents: z.object({ age: z.literal(true), kvkk: z.literal(true) }),
   /** Honeypot: insanlar bu alanı görmez, boş kalmalıdır. */
   website: z.string().max(0).optional().default(''),
 });
-export type CheckoutInput = z.infer<typeof checkoutSchema>;
-
-export const orderSubmitSchema = checkoutSchema.extend({
-  reference: z.string().trim().toUpperCase().max(20),
-  token: z.string().max(200),
-});
+export type RegisterInput = z.infer<typeof registerSchema>;
 
 export const adminLoginSchema = z.object({
   username: z.string().trim().min(1).max(60),
   password: z.string().min(1).max(200),
 });
-export const checkinLoginSchema = z.object({ password: z.string().min(1).max(200) });
-
-export const rejectSchema = z.object({ reason: z.string().trim().max(500).optional().default('') });
-
-export const ticketEditSchema = guestSchema;
-export const compTicketSchema = guestSchema.extend({ invitedBy, locale: z.enum(['tr', 'en']).default('tr') });
-
-export const scanSchema = z.object({ code: z.string().trim().min(1).max(300) });
 
 export const uuidSchema = z.string().uuid();
-export const ticketIdSchema = z.string().regex(/^[0-9A-F]{32}$/);

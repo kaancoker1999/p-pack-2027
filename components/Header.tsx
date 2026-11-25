@@ -12,8 +12,8 @@ export default function Header({ t, locale, cta = true }: { t: Dict; locale: Loc
         </Link>
         <div className="flex items-center gap-3">
           {cta && (
-            <Link href="/tickets" className="hidden rounded-full bg-crimson px-5 py-2 text-xs font-semibold tracking-wide text-white transition hover:bg-[#d81524] sm:inline-flex">
-              {t.nav.tickets}
+            <Link href="/register" className="hidden rounded-full bg-crimson px-5 py-2 text-xs font-semibold tracking-wide text-white transition hover:bg-[#d81524] sm:inline-flex">
+              {t.nav.register}
             </Link>
           )}
           <LangToggle locale={locale} label={t.nav.language} />

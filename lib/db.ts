@@ -24,43 +24,12 @@ export function db(): Sql {
   return g.__ppackSql;
 }
 
-export type OrderStatus = 'PAYMENT_SUBMITTED' | 'PAID' | 'REJECTED';
-export type TicketStatus = 'VALID' | 'USED' | 'CANCELLED';
-
-export type Guest = { name: string };
-
-export type OrderRow = {
+export type RegistrationRow = {
   id: string;
-  reference: string;
-  buyer_name: string;
-  buyer_email: string | null;
-  invited_by: string | null;
-  quantity: number;
-  unit_price: number;
-  currency: 'TRY' | 'EUR';
-  total: number;
-  price_tier: string;
-  status: OrderStatus;
-  receipt_url: string | null;
-  guests: Guest[];
-  locale: 'tr' | 'en';
-  submitted_at: Date;
-  approved_at: Date | null;
-  approved_by: string | null;
-  reject_reason: string | null;
-};
-
-export type TicketRow = {
-  id: string;
-  order_id: string | null;
-  guest_name: string;
-  guest_email: string | null;
-  guest_instagram: string | null;
-  invited_by: string | null;
-  signature: string;
-  status: TicketStatus;
-  checked_in_at: Date | null;
-  replaced_by: string | null;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  invited_by: string;
   locale: 'tr' | 'en';
   created_at: Date;
 };
@@ -73,9 +42,3 @@ export type AuditRow = {
   details: Record<string, unknown> | null;
   created_at: Date;
 };
-
-/** jsonb sürücüden string gelirse de diziye çevir. */
-export function normalizeOrder<T extends { guests: unknown }>(row: T): T & { guests: Guest[] } {
-  const guests = typeof row.guests === 'string' ? JSON.parse(row.guests) : row.guests;
-  return { ...row, guests: guests as Guest[] };
-}

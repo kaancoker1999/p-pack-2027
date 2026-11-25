@@ -13,7 +13,7 @@ export default async function KvkkPage() {
         {t.kvkk.sections.map((s) => (
           <section key={s.h}>
             <h2 className="font-display text-xl font-bold text-gold">{s.h}</h2>
-            <p className="mt-2 leading-relaxed text-white/80">{fmt(s.p, { email: event.ticketsEmail })}</p>
+            <p className="mt-2 leading-relaxed text-white/80">{fmt(s.p, { email: event.contactEmail })}</p>
           </section>
         ))}
       </div>

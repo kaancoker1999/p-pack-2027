@@ -1,10 +1,9 @@
 import { adminRoute } from '@/lib/admin-api';
 import { audit } from '@/lib/audit';
-import { db } from '@/lib/db';
+import { prettyPhone } from '@/lib/phone';
+import { listRegistrations } from '@/lib/registrations';
 
 export const runtime = 'nodejs';
-
-const STATUS_TR: Record<string, string> = { VALID: 'Geçerli', USED: 'Kullanıldı', CANCELLED: 'İptal' };
 
 /** Formül enjeksiyonuna karşı korumalı CSV hücresi */
 function cell(v: string): string {
@@ -12,25 +11,23 @@ function cell(v: string): string {
   return `"${s.replace(/"/g, '""')}"`;
 }
 
-/** Misafir listesi CSV: ad, davet eden, bilet durumu, referans */
+const when = (d: Date) =>
+  new Intl.DateTimeFormat('tr-TR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Europe/Istanbul' }).format(d);
+
+/** Kayıt listesi CSV: ad, soyad, telefon, referans kişisi, kayıt zamanı */
 export const GET = adminRoute(async (_req, session) => {
-  const rows = await db()<{ guest_name: string; invited_by: string | null; status: string; reference: string | null }[]>`
-    select t.guest_name, t.invited_by, t.status, o.reference
-    from tickets t left join orders o on o.id = t.order_id
-    order by (t.status = 'CANCELLED'), lower(t.guest_name)
-  `;
+  const rows = await listRegistrations();
   const lines = [
-    ['Ad Soyad', 'Davet eden', 'Bilet durumu', 'Referans'].map(cell).join(','),
-    ...rows.map((r) =>
-      [r.guest_name, r.invited_by ?? '', STATUS_TR[r.status] ?? r.status, r.reference ?? 'Davetli'].map(cell).join(','),
-    ),
+    ['Ad', 'Soyad', 'Telefon', 'Referans kişisi', 'Kayıt zamanı'].map(cell).join(','),
+    // Telefon başındaki + Excel'de formül sayılmasın diye boşluklu biçimde ve tırnak içinde yazılır.
+    ...rows.map((r) => [r.first_name, r.last_name, ` ${prettyPhone(r.phone)}`, r.invited_by, when(r.created_at)].map(cell).join(',')),
   ];
-  await audit(session.user, 'guests.export', null, { rows: rows.length });
+  await audit(session.user, 'registrations.export', null, { rows: rows.length });
   // BOM: Excel Türkçe karakterleri doğru açsın
   return new Response('﻿' + lines.join('\r\n'), {
     headers: {
       'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': 'attachment; filename="istanbul-2027-misafir-listesi.csv"',
+      'Content-Disposition': 'attachment; filename="istanbul-2027-kayit-listesi.csv"',
       'Cache-Control': 'no-store',
     },
   });

@@ -1,37 +1,19 @@
 import Link from 'next/link';
 import { event } from '@/config/event';
-import { fmt } from '@/i18n';
 import { getI18n } from '@/i18n/server';
-import Countdown, { InlineCountdown } from '@/components/Countdown';
+import Countdown from '@/components/Countdown';
 import Footer from '@/components/Footer';
 import Header from '@/components/Header';
 import HeroVideo from '@/components/HeroVideo';
 import { DjScene, ElegantScene, OpenBarScene } from '@/components/NightScenes';
 import PartyScene from '@/components/PartyScene';
 import Reveal from '@/components/Reveal';
-import { remainingCapacity } from '@/lib/orders';
-import {
-  formatDayMonth,
-  formatEventDate,
-  formatEventTime,
-  formatMoney,
-  nextTierAt,
-  tierAt,
-  tierLastDay,
-  tierStart,
-  trLocative,
-} from '@/lib/pricing';
+import { formatDayMonth, formatEventDate, formatEventTime } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   const { t, locale } = await getI18n();
-  const now = new Date();
-  const current = tierAt(now);
-  const next = nextTierAt(now);
-  // Veritabanı geçici olarak erişilemezse ana sayfa yine de açılsın.
-  const remaining = await remainingCapacity().catch(() => null);
-  const soldOut = remaining === 0;
   const countdownLabels = { days: t.hero.days, hours: t.hero.hours, minutes: t.hero.minutes, seconds: t.hero.seconds };
   const eventDate = formatEventDate(locale);
 
@@ -69,16 +51,9 @@ export default async function HomePage() {
             </div>
 
             <div className="mt-9 flex flex-col items-center gap-3">
-              <Link href="/tickets" className="btn-primary px-10 py-4 text-base">
+              <Link href="/register" className="btn-primary px-10 py-4 text-base">
                 {t.hero.cta}
               </Link>
-              {current && !soldOut && (
-                <p className="text-sm text-white/75">
-                  {fmt(t.hero.priceNow, {
-                    price: `${formatMoney(current.TRY, 'TRY', locale)} / ${formatMoney(current.EUR, 'EUR', locale)}`,
-                  })}
-                </p>
-              )}
             </div>
           </div>
         </section>
@@ -104,112 +79,22 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* BİLET & FİYAT */}
-        <section id="tickets" className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
-          <Reveal>
-            <p className="eyebrow">{t.pricing.eyebrow}</p>
-            <h2 className="section-title">{t.pricing.title}</h2>
-            <p className="mt-3 max-w-2xl text-white/70">{t.pricing.subtitle}</p>
-          </Reveal>
-
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
-            {event.priceTiers.map((tier, i) => {
-              const isCurrent = current?.id === tier.id;
-              const isPast = !isCurrent && now.getTime() >= new Date(tier.until).getTime();
-              const start = tierStart(tier);
-              const lastDay = formatDayMonth(tierLastDay(tier), locale);
-              const period = start
-                ? fmt(t.pricing.range, { from: formatDayMonth(start, locale), to: lastDay })
-                : fmt(t.pricing.until, { date: lastDay });
-              return (
-                <Reveal key={tier.id} delay={i * 0.08}>
-                  <div
-                    className={`relative h-full rounded-2xl border p-6 transition ${
-                      isCurrent
-                        ? 'border-gold bg-gradient-to-b from-blood/50 to-black shadow-[0_0_50px_rgba(193,18,31,0.25)]'
-                        : 'border-white/10 bg-white/[0.03]'
-                    } ${isPast ? 'opacity-45' : ''}`}
-                  >
-                    <span
-                      className={`inline-block rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wider ${
-                        isCurrent ? 'bg-gold text-black' : 'border border-white/20 text-white/60'
-                      }`}
-                    >
-                      {isCurrent ? t.pricing.current : isPast ? t.pricing.past : t.pricing.upcoming}
-                    </span>
-                    <p className="mt-4 font-display text-2xl font-bold text-white">{tier.label}</p>
-                    <p className="mt-1 text-sm text-white/70">{period}</p>
-                    <p className={`mt-3 font-display text-5xl font-bold ${isPast ? 'line-through decoration-1' : ''}`}>
-                      {formatMoney(tier.TRY, 'TRY', locale)}
-                    </p>
-                    <p className="mt-1 text-lg text-gold">
-                      {t.pricing.or} {formatMoney(tier.EUR, 'EUR', locale)}
-                    </p>
-                  </div>
-                </Reveal>
-              );
-            })}
+        {/* KAYIT */}
+        <section id="register" className="border-y border-white/10 bg-gradient-to-b from-blood/25 via-coal to-ink">
+          <div className="mx-auto max-w-3xl px-4 py-20 text-center sm:px-6 sm:py-24">
+            <Reveal>
+              <p className="eyebrow">{t.join.eyebrow}</p>
+              <h2 className="section-title">{t.join.title}</h2>
+              <p className="mx-auto mt-4 max-w-xl text-white/75">{t.join.text}</p>
+              <Link href="/register" className="btn-primary mt-8 px-10 py-4 text-base">
+                {t.join.cta}
+              </Link>
+            </Reveal>
           </div>
-
-          <Reveal delay={0.1}>
-            <div className="mt-6 grid gap-4 md:grid-cols-[1.2fr_1fr]">
-              <div className="card">
-                {!current ? (
-                  <p className="font-display text-xl font-bold">{t.pricing.closed}</p>
-                ) : soldOut ? (
-                  <p className="font-display text-xl font-bold">{t.pricing.soldOut}</p>
-                ) : (
-                  <>
-                    {next ? (
-                      <>
-                        <p className="font-display text-xl font-bold text-white sm:text-2xl">
-                          {fmt(t.pricing.increase, {
-                            date:
-                              locale === 'tr'
-                                ? trLocative(formatDayMonth(new Date(current.until), locale))
-                                : formatDayMonth(new Date(current.until), locale),
-                            price: `${formatMoney(next.TRY, 'TRY', locale)} / ${formatMoney(next.EUR, 'EUR', locale)}`,
-                          })}
-                        </p>
-                        <p className="mt-3 text-sm text-white/70">
-                          {t.pricing.increaseIn}:{' '}
-                          <strong className="font-semibold text-gold">
-                            <InlineCountdown target={current.until} labels={countdownLabels} />
-                          </strong>
-                        </p>
-                      </>
-                    ) : (
-                      <p className="font-display text-xl font-bold">{t.pricing.lastTier}</p>
-                    )}
-                    <div className="mt-6 flex flex-wrap items-center gap-4">
-                      <Link href="/tickets" className="btn-primary">
-                        {t.pricing.cta}
-                      </Link>
-                      {remaining !== null && remaining <= 50 && (
-                        <span className="text-sm font-medium text-gold">{fmt(t.pricing.remaining, { n: remaining })}</span>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-              <div className="card">
-                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold">{t.pricing.included}</p>
-                <ul className="mt-4 space-y-2 text-sm text-white/85">
-                  {[t.pricing.inc1, t.pricing.inc2, t.pricing.inc3].map((x) => (
-                    <li key={x} className="flex items-center gap-3">
-                      <span className="h-1.5 w-1.5 rounded-full bg-crimson" />
-                      {x}
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-5 border-t border-white/10 pt-4 text-xs text-white/60">{t.pricing.noRefund}</p>
-              </div>
-            </div>
-          </Reveal>
         </section>
 
         {/* MEKAN */}
-        <section id="venue" className="border-t border-white/10 bg-coal">
+        <section id="venue" className="bg-coal">
           <div className="mx-auto grid max-w-6xl gap-10 px-4 py-20 sm:px-6 sm:py-28 lg:grid-cols-2 lg:items-center">
             <Reveal>
               <p className="eyebrow">{t.venue.eyebrow}</p>

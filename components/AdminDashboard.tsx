@@ -3,253 +3,132 @@
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
-type Guest = { name: string };
-type Order = {
+type Registration = {
   id: string;
-  reference: string;
-  buyerName: string;
-  invitedBy: string | null;
-  quantity: number;
-  unitPrice: number;
-  currency: 'TRY' | 'EUR';
-  total: number;
-  tier: string;
-  status: 'PAYMENT_SUBMITTED' | 'PAID' | 'REJECTED';
-  hasReceipt: boolean;
-  guests: Guest[];
-  submittedAt: string;
-  approvedAt: string | null;
-  approvedBy: string | null;
-  rejectReason: string | null;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  invitedBy: string;
+  locale: 'tr' | 'en';
+  createdAt: string;
 };
-type Ticket = {
-  id: string;
-  orderId: string | null;
-  name: string;
-  invitedBy: string | null;
-  status: 'VALID' | 'USED' | 'CANCELLED';
-  checkedInAt: string | null;
-  replacedBy: string | null;
-};
-type LogEntry = { id: number; admin: string; action: string; targetId: string | null; details: Record<string, unknown> | null; at: string };
+type LogEntry = { id: number; admin: string; action: string; details: Record<string, unknown> | null; at: string };
 
 export type AdminData = {
   user: string;
-  now: number;
-  approvalWindowHours: number;
+  capacity: number;
   inviters: string[];
-  stats: {
-    confirmedTickets: number;
-    pendingOrders: number;
-    pendingPeople: number;
-    revenueTRY: number;
-    revenueEUR: number;
-    remaining: number;
-    checkedIn: number;
-    capacity: number;
-  };
-  orders: Order[];
-  tickets: Ticket[];
+  registrations: Registration[];
   log: LogEntry[];
 };
 
-const ORDER_STATUS = { PAYMENT_SUBMITTED: 'Onay bekliyor', PAID: 'Onaylandı', REJECTED: 'Reddedildi' } as const;
-const TICKET_STATUS = { VALID: 'Geçerli', USED: 'İçeride', CANCELLED: 'İptal' } as const;
 const ACTIONS: Record<string, string> = {
   'admin.login': 'Admin girişi',
-  'checkin.login': 'Kapı girişi',
-  'order.approve': 'Sipariş onaylandı',
-  'order.reject': 'Sipariş reddedildi',
-  'ticket.rename': 'İsim değişikliği',
-  'ticket.comp': 'Davetli bileti oluşturuldu',
-  'ticket.checkin': 'Kapıdan giriş',
-  'guests.export': 'Misafir listesi indirildi',
+  'registration.delete': 'Kayıt silindi',
+  'registrations.export': 'Kayıt listesi indirildi',
 };
 
-const money = (n: number, c: 'TRY' | 'EUR') => `${n.toLocaleString('tr-TR')} ${c === 'TRY' ? '₺' : '€'}`;
 const dt = (iso: string) =>
   new Intl.DateTimeFormat('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Istanbul' }).format(new Date(iso));
 const norm = (s: string) => s.toLocaleLowerCase('tr-TR');
+const prettyPhone = (p: string) => {
+  const m = p.match(/^\+90(\d{3})(\d{3})(\d{2})(\d{2})$/);
+  return m ? `+90 ${m[1]} ${m[2]} ${m[3]} ${m[4]}` : p;
+};
 
 export default function AdminDashboard({ data, initialQuery }: { data: AdminData; initialQuery: string }) {
   const router = useRouter();
-  const [tab, setTab] = useState<'orders' | 'tickets' | 'log'>('orders');
+  const [tab, setTab] = useState<'list' | 'log'>('list');
   const [q, setQ] = useState(initialQuery);
-  const [status, setStatus] = useState<'ALL' | Order['status'] | 'OVERDUE'>('ALL');
-  const [ticketStatus, setTicketStatus] = useState<'ALL' | Ticket['status']>('ALL');
-  const [open, setOpen] = useState<string | null>(null);
+  const [inviter, setInviter] = useState('ALL');
   const [busy, setBusy] = useState<string | null>(null);
   const [flash, setFlash] = useState<{ ok: boolean; text: string } | null>(null);
-  const [rejecting, setRejecting] = useState<Order | null>(null);
-  const [rejectReason, setRejectReason] = useState('');
-  const [editing, setEditing] = useState<Ticket | 'new' | null>(null);
-  const [form, setForm] = useState<{ name: string; invitedBy: string; locale: 'tr' | 'en' }>({ name: '', invitedBy: '', locale: 'tr' });
-  const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const overdueMs = data.approvalWindowHours * 3600 * 1000;
-  const isOverdue = (o: Order) => o.status === 'PAYMENT_SUBMITTED' && data.now - new Date(o.submittedAt).getTime() > overdueMs;
-  const ticketsByOrder = useMemo(() => {
-    const map = new Map<string, Ticket[]>();
-    for (const t of data.tickets) if (t.orderId) map.set(t.orderId, [...(map.get(t.orderId) ?? []), t]);
-    return map;
-  }, [data.tickets]);
-  const refByOrder = useMemo(() => new Map(data.orders.map((o) => [o.id, o.reference])), [data.orders]);
+  const perInviter = useMemo(() => {
+    const map = new Map<string, number>(data.inviters.map((n) => [n, 0]));
+    for (const r of data.registrations) map.set(r.invitedBy, (map.get(r.invitedBy) ?? 0) + 1);
+    return [...map.entries()];
+  }, [data.registrations, data.inviters]);
 
-  const orders = useMemo(() => {
+  const rows = useMemo(() => {
     const needle = norm(q.trim());
-    return data.orders.filter((o) => {
-      if (status === 'OVERDUE' ? !isOverdue(o) : status !== 'ALL' && o.status !== status) return false;
+    const digits = q.replace(/\D/g, '');
+    return data.registrations.filter((r) => {
+      if (inviter !== 'ALL' && r.invitedBy !== inviter) return false;
       if (!needle) return true;
-      const hay = norm([o.reference, o.buyerName, o.invitedBy ?? '', ...o.guests.map((g) => g.name)].join(' '));
-      return hay.includes(needle);
+      if (norm(`${r.firstName} ${r.lastName} ${r.invitedBy}`).includes(needle)) return true;
+      return digits.length >= 3 && r.phone.replace(/\D/g, '').includes(digits.replace(/^0/, ''));
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data.orders, q, status]);
+  }, [data.registrations, q, inviter]);
 
-  const tickets = useMemo(() => {
-    const needle = norm(q.trim());
-    return data.tickets.filter((t) => {
-      if (ticketStatus !== 'ALL' && t.status !== ticketStatus) return false;
-      if (!needle) return true;
-      return norm([t.name, t.invitedBy ?? '', t.id, t.orderId ? (refByOrder.get(t.orderId) ?? '') : 'davetli'].join(' ')).includes(needle);
-    });
-  }, [data.tickets, q, ticketStatus, refByOrder]);
-
-  async function call(key: string, url: string, body: unknown, okText: string): Promise<boolean> {
-    setBusy(key);
+  async function remove(r: Registration) {
+    if (!confirm(`${r.firstName} ${r.lastName} kaydı silinsin mi?\nBu işlem geri alınamaz.`)) return;
+    setBusy(r.id);
     setFlash(null);
     try {
-      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body ?? {}) });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const text =
-          res.status === 401
-            ? 'Oturum süresi doldu, yeniden giriş yapın.'
-            : d.error === 'conflict'
-              ? 'Bu kayıt başka biri tarafından zaten işlenmiş. Sayfa yenilendi.'
-              : d.error === 'capacity'
-                ? 'Kapasite dolu.'
-                : d.error === 'validation'
-                  ? 'Bilgileri kontrol edin: ad ve soyad eksiksiz olmalı, davet eden seçilmeli.'
-                  : 'İşlem başarısız oldu.';
-        setFlash({ ok: false, text });
-        router.refresh();
-        return false;
-      }
-      setFlash({ ok: true, text: okText });
+      const res = await fetch(`/api/admin/registrations/${r.id}`, { method: 'DELETE' });
+      if (res.ok) setFlash({ ok: true, text: `${r.firstName} ${r.lastName} kaydı silindi.` });
+      else setFlash({ ok: false, text: res.status === 401 ? 'Oturum süresi doldu, yeniden giriş yapın.' : 'Kayıt silinemedi.' });
       router.refresh();
-      return true;
     } catch {
       setFlash({ ok: false, text: 'Bağlantı hatası.' });
-      return false;
     } finally {
       setBusy(null);
     }
   }
 
-  const approve = (o: Order) => {
-    if (!confirm(`${o.reference} onaylansın mı?\n${o.quantity} kişi · ${money(o.total, o.currency)}\n\n${o.quantity} bilet üretilecek ve sipariş sayfasında görünecek.`)) return;
-    void call(`approve:${o.id}`, `/api/admin/orders/${o.id}/approve`, null, `${o.reference} onaylandı, ${o.quantity} bilet sipariş sayfasında görünüyor.`);
-  };
-  const submitReject = async () => {
-    if (!rejecting) return;
-    if (await call(`reject:${rejecting.id}`, `/api/admin/orders/${rejecting.id}/reject`, { reason: rejectReason }, `${rejecting.reference} reddedildi.`)) {
-      setRejecting(null);
-      setRejectReason('');
-    }
-  };
-  const openEdit = (t: Ticket | 'new') => {
-    setForm(t === 'new' ? { name: '', invitedBy: '', locale: 'tr' } : { name: t.name, invitedBy: t.invitedBy ?? '', locale: 'tr' });
-    setEditing(t);
-  };
-  const submitEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editing) return;
-    const ok =
-      editing === 'new'
-        ? await call('comp', '/api/admin/tickets', form, `Davetli bileti oluşturuldu: ${form.name}. Biletler sekmesinden linkini kopyalayıp gönderin.`)
-        : await call(`rename:${editing.id}`, `/api/admin/tickets/${editing.id}/rename`, { name: form.name }, `Eski bilet iptal edildi; ${form.name} adına yeni QR'lı bilet oluşturuldu.`);
-    if (ok) setEditing(null);
-  };
-  const copyLink = async (t: Ticket) => {
-    try {
-      await navigator.clipboard.writeText(`${window.location.origin}/ticket/${t.id}`);
-      setCopiedId(t.id);
-      setTimeout(() => setCopiedId(null), 1600);
-    } catch {
-      setFlash({ ok: false, text: 'Link kopyalanamadı; "Bileti aç" ile açıp adres çubuğundan kopyalayın.' });
-    }
-  };
   const logout = async () => {
     await fetch('/api/admin/logout', { method: 'POST' });
     window.location.assign('/admin/login');
   };
 
-  const s = data.stats;
-  const overdueCount = data.orders.filter(isOverdue).length;
-  const cards: [string, string, string?][] = [
-    ['Onaylı bilet', String(s.confirmedTickets), `kapasite ${s.capacity}`],
-    ['Onay bekleyen sipariş', String(s.pendingOrders), `${s.pendingPeople} kişi${overdueCount ? ` · ${overdueCount} gecikmiş` : ''}`],
-    ['Gelir (TL)', money(s.revenueTRY, 'TRY')],
-    ['Gelir (EUR)', money(s.revenueEUR, 'EUR')],
-    ['Kalan kapasite', String(s.remaining)],
-    ['İçeri giren', String(s.checkedIn), `/ ${s.confirmedTickets} bilet`],
-  ];
-
-  const ticketActions = (t: Ticket) =>
-    t.status === 'CANCELLED' ? null : (
-      <div className="flex flex-wrap gap-2">
-        <a href={`/ticket/${t.id}`} target="_blank" className="rounded-lg border border-white/15 px-2.5 py-1 text-xs hover:border-white/40">
-          Bileti aç
-        </a>
-        <button onClick={() => copyLink(t)} className="rounded-lg border border-white/15 px-2.5 py-1 text-xs hover:border-white/40">
-          {copiedId === t.id ? '✓ Kopyalandı' : 'Linki kopyala'}
-        </button>
-        {t.status === 'VALID' && (
-          <button onClick={() => openEdit(t)} disabled={busy !== null} className="rounded-lg border border-gold/50 px-2.5 py-1 text-xs text-gold hover:bg-gold/10 disabled:opacity-40">
-            İsim değiştir
-          </button>
-        )}
-      </div>
-    );
-
-  const ticketBadge = (st: Ticket['status']) => (
-    <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${st === 'VALID' ? 'border-emerald-400/60 text-emerald-300' : st === 'USED' ? 'border-sky-400/60 text-sky-300' : 'border-white/20 text-white/40'}`}>
-      {TICKET_STATUS[st]}
-    </span>
-  );
+  const total = data.registrations.length;
+  const today = data.registrations.filter((r) => Date.now() - new Date(r.createdAt).getTime() < 24 * 3600 * 1000).length;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pb-24 pt-6 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 pb-24 pt-6 sm:px-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="font-logo text-xl font-bold tracking-[0.2em] text-gold">Istanbul 2027</p>
           <p className="text-xs text-white/50">Admin paneli · {data.user}</p>
         </div>
         <div className="flex flex-wrap gap-2 text-sm">
-          <a href="/checkin" className="rounded-full border border-white/15 px-4 py-2 hover:border-white/40">
-            Kapı ekranı
-          </a>
           <a href="/api/admin/export" className="rounded-full border border-gold/60 px-4 py-2 text-gold hover:bg-gold/10">
-            ↓ Misafir listesi (CSV)
+            ↓ Kayıt listesi (CSV)
           </a>
-          <button onClick={() => openEdit('new')} className="rounded-full bg-crimson px-4 py-2 font-semibold hover:bg-[#d81524]">
-            + Davetli bileti
-          </button>
           <button onClick={logout} className="rounded-full border border-white/15 px-4 py-2 text-white/70 hover:border-white/40">
             Çıkış
           </button>
         </div>
       </header>
 
-      <section className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        {cards.map(([label, value, sub]) => (
-          <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <p className="text-[11px] uppercase tracking-wider text-white/50">{label}</p>
-            <p className="mt-1 font-display text-2xl font-bold">{value}</p>
-            {sub && <p className="text-xs text-white/50">{sub}</p>}
+      <section className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="rounded-2xl border border-gold/40 bg-white/[0.03] p-4">
+          <p className="text-[11px] uppercase tracking-wider text-white/50">Toplam kayıt</p>
+          <p className="mt-1 font-display text-3xl font-bold">{total}</p>
+          <p className="text-xs text-white/50">hedef {data.capacity}</p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+          <p className="text-[11px] uppercase tracking-wider text-white/50">Son 24 saat</p>
+          <p className="mt-1 font-display text-3xl font-bold">{today}</p>
+        </div>
+        <div className="col-span-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+          <p className="text-[11px] uppercase tracking-wider text-white/50">Referans kişisine göre</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {perInviter.map(([name, count]) => (
+              <button
+                key={name}
+                onClick={() => {
+                  setInviter(inviter === name ? 'ALL' : name);
+                  setTab('list');
+                }}
+                className={`rounded-full border px-3 py-1 text-sm ${inviter === name ? 'border-gold bg-gold text-black' : 'border-white/15 hover:border-white/40'}`}
+              >
+                {name} <strong>{count}</strong>
+              </button>
+            ))}
           </div>
-        ))}
+        </div>
       </section>
 
       {flash && (
@@ -262,8 +141,7 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
         <div className="flex rounded-full border border-white/15 p-0.5 text-sm">
           {(
             [
-              ['orders', `Siparişler (${data.orders.length})`],
-              ['tickets', `Biletler (${data.tickets.filter((t) => t.status !== 'CANCELLED').length})`],
+              ['list', `Kayıtlar (${total})`],
               ['log', 'İşlem kaydı'],
             ] as const
           ).map(([k, label]) => (
@@ -272,35 +150,28 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
             </button>
           ))}
         </div>
-        {tab !== 'log' && (
+        {tab === 'list' && (
           <>
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ara: referans, isim, davet eden" className="field max-w-xs py-2 text-sm" aria-label="Ara" />
-            {tab === 'orders' ? (
-              <select value={status} onChange={(e) => setStatus(e.target.value as typeof status)} className="field w-auto py-2 text-sm" aria-label="Durum filtresi">
-                <option value="ALL">Tüm durumlar</option>
-                <option value="PAYMENT_SUBMITTED">Onay bekliyor</option>
-                <option value="OVERDUE">48 saati geçenler</option>
-                <option value="PAID">Onaylandı</option>
-                <option value="REJECTED">Reddedildi</option>
-              </select>
-            ) : (
-              <select value={ticketStatus} onChange={(e) => setTicketStatus(e.target.value as typeof ticketStatus)} className="field w-auto py-2 text-sm" aria-label="Durum filtresi">
-                <option value="ALL">Tüm durumlar</option>
-                <option value="VALID">Geçerli</option>
-                <option value="USED">İçeride</option>
-                <option value="CANCELLED">İptal</option>
-              </select>
-            )}
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ara: isim, telefon, referans" className="field max-w-xs py-2 text-sm" aria-label="Ara" />
+            <select value={inviter} onChange={(e) => setInviter(e.target.value)} className="field w-auto py-2 text-sm" aria-label="Referans filtresi">
+              <option value="ALL">Tüm referanslar</option>
+              {data.inviters.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+            <span className="text-xs text-white/50">{rows.length} kayıt gösteriliyor</span>
           </>
         )}
       </div>
 
-      {tab === 'orders' && (
+      {tab === 'list' && (
         <div className="mt-4 overflow-x-auto rounded-2xl border border-white/10">
-          <table className="w-full min-w-[980px] text-left text-sm">
+          <table className="w-full min-w-[680px] text-left text-sm">
             <thead className="bg-white/[0.04] text-[11px] uppercase tracking-wider text-white/50">
               <tr>
-                {['Referans', 'Sipariş sahibi', 'Davet eden', 'Kişi', 'Tutar', 'Dekont', 'Durum', 'Bildirim saati', 'Onaylayan', ''].map((h) => (
+                {['İsim', 'Soyad', 'Telefon', 'Referans kişisi', 'Kayıt zamanı', ''].map((h) => (
                   <th key={h} className="px-3 py-3 font-medium">
                     {h}
                   </th>
@@ -308,134 +179,32 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
               </tr>
             </thead>
             <tbody>
-              {orders.length === 0 && (
-                <tr>
-                  <td colSpan={10} className="px-3 py-10 text-center text-white/50">
-                    Sipariş bulunamadı.
-                  </td>
-                </tr>
-              )}
-              {orders.map((o) => {
-                const overdue = isOverdue(o);
-                const expanded = open === o.id;
-                return [
-                  <tr key={o.id} className={`border-t border-white/10 align-top ${overdue ? 'bg-crimson/20' : ''}`}>
-                    <td className="px-3 py-3">
-                      <button onClick={() => setOpen(expanded ? null : o.id)} className="whitespace-nowrap font-mono font-bold text-gold hover:underline" aria-expanded={expanded}>
-                        {expanded ? '▾' : '▸'} {o.reference}
-                      </button>
-                      {overdue && <span className="mt-1 block w-fit rounded bg-crimson px-1.5 py-0.5 text-[10px] font-bold uppercase">48 saati geçti</span>}
-                    </td>
-                    <td className="px-3 py-3">
-                      <span className="font-medium">{o.buyerName}</span>
-                    </td>
-                    <td className="px-3 py-3 text-gold">{o.invitedBy ?? '—'}</td>
-                    <td className="px-3 py-3">{o.quantity}</td>
-                    <td className="px-3 py-3 font-semibold">
-                      {money(o.total, o.currency)}
-                      <span className="block text-xs font-normal text-white/50">
-                        {o.currency} · {o.tier}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3">
-                      {o.hasReceipt ? (
-                        <a href={`/api/admin/receipt/${o.id}`} target="_blank" className="text-gold underline underline-offset-4">
-                          Görüntüle
-                        </a>
-                      ) : (
-                        <span className="text-white/30">Yok</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-3">
-                      <span className={`whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold ${o.status === 'PAID' ? 'border-emerald-400/60 text-emerald-300' : o.status === 'REJECTED' ? 'border-white/20 text-white/50' : overdue ? 'border-crimson bg-crimson text-white' : 'border-gold/70 text-gold'}`}>
-                        {ORDER_STATUS[o.status]}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-3 text-white/80">{dt(o.submittedAt)}</td>
-                    <td className="px-3 py-3 text-white/80">
-                      {o.approvedBy ?? '—'}
-                      {o.approvedAt && <span className="block text-xs text-white/50">{dt(o.approvedAt)}</span>}
-                    </td>
-                    <td className="px-3 py-3">
-                      {o.status === 'PAYMENT_SUBMITTED' && (
-                        <div className="flex gap-2">
-                          <button onClick={() => approve(o)} disabled={busy !== null} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold hover:bg-emerald-500 disabled:opacity-40">
-                            {busy === `approve:${o.id}` ? '…' : 'Onayla'}
-                          </button>
-                          <button onClick={() => { setRejecting(o); setRejectReason(''); }} disabled={busy !== null} className="rounded-lg border border-crimson px-3 py-1.5 text-xs font-semibold text-crimson hover:bg-crimson/10 disabled:opacity-40">
-                            Reddet
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>,
-                  expanded && (
-                    <tr key={`${o.id}-d`} className="border-t border-white/5 bg-black/40">
-                      <td colSpan={10} className="px-4 py-4">
-                        {o.status === 'REJECTED' && <p className="mb-3 text-sm text-white/70">Ret açıklaması: {o.rejectReason || '—'}</p>}
-                        {o.status === 'PAID' ? (
-                          <ul className="space-y-2">
-                            {(ticketsByOrder.get(o.id) ?? []).map((t) => (
-                              <li key={t.id} className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 px-3 py-2 ${t.status === 'CANCELLED' ? 'opacity-50' : ''}`}>
-                                <span>
-                                  <span className="font-medium">{t.name}</span>
-                                </span>
-                                <span className="flex flex-wrap items-center gap-3">
-                                  {ticketBadge(t.status)}
-                                  {ticketActions(t)}
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <ul className="space-y-1 text-sm">
-                            {o.guests.map((g, i) => (
-                              <li key={i}>
-                                <span className="font-medium">{g.name}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </td>
-                    </tr>
-                  ),
-                ];
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {tab === 'tickets' && (
-        <div className="mt-4 overflow-x-auto rounded-2xl border border-white/10">
-          <table className="w-full min-w-[820px] text-left text-sm">
-            <thead className="bg-white/[0.04] text-[11px] uppercase tracking-wider text-white/50">
-              <tr>
-                {['Misafir', 'Davet eden', 'Sipariş', 'Durum', 'Giriş', ''].map((h) => (
-                  <th key={h} className="px-3 py-3 font-medium">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {tickets.length === 0 && (
+              {rows.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-3 py-10 text-center text-white/50">
-                    Bilet bulunamadı.
+                    Kayıt bulunamadı.
                   </td>
                 </tr>
               )}
-              {tickets.map((t) => (
-                <tr key={t.id} className={`border-t border-white/10 ${t.status === 'CANCELLED' ? 'opacity-50' : ''}`}>
-                  <td className="px-3 py-3">
-                    <span className="font-medium">{t.name}</span>
+              {rows.map((r) => (
+                <tr key={r.id} className="border-t border-white/10">
+                  <td className="px-3 py-3 font-medium">{r.firstName}</td>
+                  <td className="px-3 py-3 font-medium">{r.lastName}</td>
+                  <td className="whitespace-nowrap px-3 py-3">
+                    <a href={`tel:${r.phone}`} className="hover:text-gold">
+                      {prettyPhone(r.phone)}
+                    </a>
+                    <a href={`https://wa.me/${r.phone.slice(1)}`} target="_blank" rel="noopener noreferrer" className="ml-3 text-xs text-emerald-300 underline underline-offset-4">
+                      WhatsApp
+                    </a>
                   </td>
-                  <td className="px-3 py-3 text-gold">{t.invitedBy ?? '—'}</td>
-                  <td className="px-3 py-3 font-mono text-xs">{t.orderId ? refByOrder.get(t.orderId) : 'Davetli'}</td>
-                  <td className="px-3 py-3">{ticketBadge(t.status)}</td>
-                  <td className="px-3 py-3 text-white/70">{t.checkedInAt ? dt(t.checkedInAt) : '—'}</td>
-                  <td className="px-3 py-3">{ticketActions(t)}</td>
+                  <td className="px-3 py-3 text-gold">{r.invitedBy}</td>
+                  <td className="whitespace-nowrap px-3 py-3 text-white/70">{dt(r.createdAt)}</td>
+                  <td className="px-3 py-3 text-right">
+                    <button onClick={() => remove(r)} disabled={busy !== null} className="rounded-lg border border-crimson/60 px-2.5 py-1 text-xs text-crimson hover:bg-crimson/10 disabled:opacity-40">
+                      {busy === r.id ? '…' : 'Sil'}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -445,10 +214,10 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
 
       {tab === 'log' && (
         <div className="mt-4 overflow-x-auto rounded-2xl border border-white/10">
-          <table className="w-full min-w-[640px] text-left text-sm">
+          <table className="w-full min-w-[560px] text-left text-sm">
             <thead className="bg-white/[0.04] text-[11px] uppercase tracking-wider text-white/50">
               <tr>
-                {['Zaman', 'Kim', 'Ne yaptı', 'Hedef'].map((h) => (
+                {['Zaman', 'Kim', 'Ne yaptı', 'Ayrıntı'].map((h) => (
                   <th key={h} className="px-3 py-3 font-medium">
                     {h}
                   </th>
@@ -458,15 +227,13 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
             <tbody>
               {data.log.map((l) => {
                 const d = l.details ?? {};
-                const extra = typeof d.reference === 'string' ? d.reference : typeof d.name === 'string' ? d.name : typeof (d.to as Guest | undefined)?.name === 'string' ? `${(d.from as Guest | undefined)?.name ?? ''} → ${(d.to as Guest).name}` : typeof (d.guest as Guest | undefined)?.name === 'string' ? (d.guest as Guest).name : '';
+                const extra = typeof d.name === 'string' ? d.name : typeof d.rows === 'number' ? `${d.rows} kayıt` : '';
                 return (
                   <tr key={l.id} className="border-t border-white/10">
                     <td className="whitespace-nowrap px-3 py-2.5 text-white/70">{dt(l.at)}</td>
                     <td className="px-3 py-2.5 font-medium">{l.admin}</td>
                     <td className="px-3 py-2.5">{ACTIONS[l.action] ?? l.action}</td>
-                    <td className="px-3 py-2.5 text-xs text-white/60">
-                      {extra} {l.targetId && <span className="font-mono text-white/30">{l.targetId.slice(0, 8)}</span>}
-                    </td>
+                    <td className="px-3 py-2.5 text-xs text-white/60">{extra}</td>
                   </tr>
                 );
               })}
@@ -474,91 +241,6 @@ export default function AdminDashboard({ data, initialQuery }: { data: AdminData
           </table>
         </div>
       )}
-
-      {rejecting && (
-        <Modal title={`${rejecting.reference} reddedilsin mi?`} onClose={() => setRejecting(null)}>
-          <p className="text-sm text-white/70">
-            {rejecting.buyerName} · {rejecting.quantity} kişi · {money(rejecting.total, rejecting.currency)}. Açıklama sipariş sayfasında görünür ve kontenjan serbest kalır.
-          </p>
-          <label className="label mt-4" htmlFor="reason">
-            Açıklama (kullanıcıya gösterilir, isteğe bağlı)
-          </label>
-          <textarea id="reason" className="field min-h-24" maxLength={500} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} placeholder="Ör. Ödeme hesabımıza ulaşmadı." />
-          <div className="mt-5 flex justify-end gap-3">
-            <button onClick={() => setRejecting(null)} className="btn-ghost px-5 py-2.5">
-              Vazgeç
-            </button>
-            <button onClick={submitReject} disabled={busy !== null} className="btn-primary px-5 py-2.5">
-              {busy ? '…' : 'Reddet'}
-            </button>
-          </div>
-        </Modal>
-      )}
-
-      {editing && (
-        <Modal title={editing === 'new' ? 'Davetli bileti oluştur' : 'İsim değişikliği'} onClose={() => setEditing(null)}>
-          <p className="text-sm text-white/70">
-            {editing === 'new'
-              ? 'Siparişsiz bir bilet oluşturulur. Kapasiteden düşer; linkini Biletler sekmesinden kopyalayıp misafire gönderin.'
-              : 'Eski bilet iptal edilir; yeni QR kodlu bilet sipariş sayfasında eskisinin yerini alır.'}
-          </p>
-          <form onSubmit={submitEdit} className="mt-4 space-y-3">
-            <div>
-              <label className="label" htmlFor="e-name">
-                Ad Soyad
-              </label>
-              <input id="e-name" className="field" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required maxLength={80} />
-            </div>
-            {editing === 'new' && (
-              <div>
-                <label className="label" htmlFor="e-inviter">
-                  Davet eden
-                </label>
-                <select id="e-inviter" className="field" value={form.invitedBy} onChange={(e) => setForm({ ...form, invitedBy: e.target.value })} required>
-                  <option value="" disabled>
-                    Seç…
-                  </option>
-                  {data.inviters.map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-            {editing === 'new' && (
-              <div>
-                <label className="label" htmlFor="e-locale">
-                  Biletin dili
-                </label>
-                <select id="e-locale" className="field" value={form.locale} onChange={(e) => setForm({ ...form, locale: e.target.value as 'tr' | 'en' })}>
-                  <option value="tr">Türkçe</option>
-                  <option value="en">English</option>
-                </select>
-              </div>
-            )}
-            <div className="flex justify-end gap-3 pt-2">
-              <button type="button" onClick={() => setEditing(null)} className="btn-ghost px-5 py-2.5">
-                Vazgeç
-              </button>
-              <button disabled={busy !== null} className="btn-primary px-5 py-2.5">
-                {busy ? '…' : editing === 'new' ? 'Bileti oluştur' : 'İsmi değiştir'}
-              </button>
-            </div>
-          </form>
-        </Modal>
-      )}
-    </div>
-  );
-}
-
-function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 p-4 sm:items-center" role="dialog" aria-modal="true" aria-label={title} onClick={onClose}>
-      <div className="w-full max-w-md rounded-2xl border border-white/15 bg-coal p-6" onClick={(e) => e.stopPropagation()}>
-        <h2 className="font-display text-xl font-bold">{title}</h2>
-        <div className="mt-3">{children}</div>
-      </div>
     </div>
   );
 }
