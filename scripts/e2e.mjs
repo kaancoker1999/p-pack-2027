@@ -26,7 +26,7 @@ const page = async (path, cookie) => (await fetch(BASE + path, cookie ? { header
 const cookieOf = (res) => (res.headers.get('set-cookie') ?? '').split(';')[0];
 
 const consents = { age: true, kvkk: true };
-const base = { firstName: 'Kaan', lastName: 'Çoker', phone: '0532 111 22 33', invitedBy: 'Kaan', locale: 'tr', consents, website: '' };
+const base = { firstName: 'Kaan', lastName: 'Çoker', phone: '0532 111 22 33', invitedBy: 'Kaan Çoker', locale: 'tr', consents, website: '' };
 const reg = (over) => post('/api/register', { ...base, ...over });
 
 step('1. Sayfalar');
@@ -34,7 +34,7 @@ const home = await page('/');
 check('ana sayfada "Kayıt Ol" var, fiyat ve bilet yok', home.includes('Kayıt Ol') && !/Early Bird|Bilet Al|₺/.test(home));
 const form = await page('/register');
 check('kayıt formu: isim, soyad, telefon, referans kişisi', ['İsim', 'Soyad', 'Telefon', 'Referans kişisi'].every((x) => form.includes(x)));
-check('referans listesinde yalnızca 5 organizatör', ['Metehan', 'Kaan', 'Derin', 'Elif', 'Doğa'].every((x) => form.includes(x)));
+check('referans listesinde yalnızca 5 organizatör', ['Derin Kılıç', 'Kaan Çoker', 'Metehan Buharalı', 'Elif Onur', 'Doğa Özilhan'].every((x) => form.includes(x)));
 const old = await fetch(`${BASE}/tickets`, { redirect: 'manual' });
 check('eski /tickets linki kayıt formuna yönlenir', [307, 308].includes(old.status) && (old.headers.get('location') ?? '').includes('/register'), String(old.status));
 for (const gone of ['/order/IST27-AAAA-AAAA', '/checkin', '/ticket/' + '0'.repeat(32)]) {
@@ -56,13 +56,13 @@ step('3. Kayıt');
 const r1 = await reg({});
 const d1 = await r1.json();
 check('kayıt oluşturuldu', r1.status === 200 && d1.ok && d1.duplicate === false, JSON.stringify(d1));
-const dup = await (await reg({ firstName: 'Başka', lastName: 'Biri', phone: '+90 (532) 111-22-33', invitedBy: 'Elif' })).json();
+const dup = await (await reg({ firstName: 'Başka', lastName: 'Biri', phone: '+90 (532) 111-22-33', invitedBy: 'Elif Onur' })).json();
 check('aynı telefon (farklı yazımla) ikinci kayıt açmaz', dup.ok && dup.duplicate === true && dup.firstName === null, JSON.stringify(dup));
 const people = [
-  { firstName: 'Ayşe', lastName: 'Yıldız', phone: '5332223344', invitedBy: 'Metehan' },
-  { firstName: 'Mehmet Ali', lastName: 'Öztürk', phone: '+905343334455', invitedBy: 'Derin' },
-  { firstName: 'John', lastName: "O'Neil", phone: '+44 7911 123456', invitedBy: 'Doğa', locale: 'en' },
-  { firstName: 'Zeynep', lastName: 'Şahin-Kaya', phone: '00905354445566', invitedBy: 'Elif' },
+  { firstName: 'Ayşe', lastName: 'Yıldız', phone: '5332223344', invitedBy: 'Metehan Buharalı' },
+  { firstName: 'Mehmet Ali', lastName: 'Öztürk', phone: '+905343334455', invitedBy: 'Derin Kılıç' },
+  { firstName: 'John', lastName: "O'Neil", phone: '+44 7911 123456', invitedBy: 'Doğa Özilhan', locale: 'en' },
+  { firstName: 'Zeynep', lastName: 'Şahin-Kaya', phone: '00905354445566', invitedBy: 'Elif Onur' },
 ];
 for (const p of people) {
   const r = await reg(p);
@@ -82,13 +82,13 @@ step('5. Admin listesi ve CSV');
 const panel = await page('/admin', admin);
 check('panel 5 kaydı listeler', ['Çoker', 'Yıldız', 'Öztürk', 'Neil', 'Şahin-Kaya'].every((x) => panel.includes(x)) && !panel.includes('Başka'));
 check('telefonlar tek biçimde saklandı', ['+905321112233', '+905332223344', '+905343334455', '+447911123456', '+905354445566'].every((x) => panel.includes(x)));
-check('referans kişileri kayıtlı', panel.includes('\\"invitedBy\\":\\"Metehan\\"') && panel.includes('\\"invitedBy\\":\\"Doğa\\"'));
+check('referans kişileri kayıtlı', panel.includes('\\"invitedBy\\":\\"Metehan Buharalı\\"') && panel.includes('\\"invitedBy\\":\\"Doğa Özilhan\\"'));
 const csv = await page('/api/admin/export', admin);
 check('CSV başlıkları', csv.includes('"Sıra","Ad","Soyad","Telefon","Referans kişisi","Ödeme durumu","Kayıt zamanı"'));
 const csvLines = csv.trim().split('\r\n');
 check('CSV: 5 kişi, hepsi "Ödenmedi"', csvLines.length === 6 && csvLines.slice(1).every((l) => l.includes('"Ödenmedi"')), String(csvLines.length));
 check('CSV isme göre sıralı (Ayşe, John, Kaan, Mehmet Ali, Zeynep)', ['Ayşe', 'John', 'Kaan', 'Mehmet Ali', 'Zeynep'].every((n, i) => csvLines[i + 1].startsWith(`"${i + 1}","${n}"`)), csvLines.slice(1).map((l) => l.split(',')[1]).join(' '));
-check('CSV satırı: telefon ve referans', csv.includes('"Kaan","Çoker"," +90 532 111 22 33","Kaan"') && csv.includes('"John","O\'Neil"," +447911123456","Doğa"'));
+check('CSV satırı: telefon ve referans', csv.includes('"Kaan","Çoker"," +90 532 111 22 33","Kaan Çoker"') && csv.includes('"John","O\'Neil"," +447911123456","Doğa Özilhan"'));
 check('panelde WhatsApp linki yok', !/whatsapp|wa\.me/i.test(panel));
 
 step('5b. Ödeme durumu');
@@ -101,7 +101,7 @@ check('Kaan → Nakit', (await send('PATCH', `/api/admin/registrations/${idKaan}
 check('John → IBAN', (await send('PATCH', `/api/admin/registrations/${idJohn}`, { payment: 'iban' }, admin)).status === 200);
 check('olmayan kayıt → 404', (await send('PATCH', '/api/admin/registrations/905000000000', { payment: 'cash' }, admin)).status === 404);
 const csv2 = await page('/api/admin/export', admin);
-check('CSV ödeme durumlarını gösterir', csv2.includes('"Kaan","Çoker"," +90 532 111 22 33","Kaan","Nakit"') && csv2.includes('"Doğa","IBAN"') && (csv2.match(/"Ödenmedi"/g) ?? []).length === 3);
+check('CSV ödeme durumlarını gösterir', csv2.includes('"Kaan","Çoker"," +90 532 111 22 33","Kaan Çoker","Nakit"') && csv2.includes('"Doğa Özilhan","IBAN"') && (csv2.match(/"Ödenmedi"/g) ?? []).length === 3);
 check('Kaan → tekrar Ödenmedi', (await send('PATCH', `/api/admin/registrations/${idKaan}`, { payment: 'unpaid' }, admin)).status === 200 && (await page('/admin', admin)).includes('registration.payment'));
 
 step('5c. Parti listesi rengi (cinsiyet düzeltmesi)');
