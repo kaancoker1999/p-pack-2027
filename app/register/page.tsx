@@ -22,8 +22,8 @@ export default async function RegisterPage() {
         </p>
         <p className="mx-auto mt-3 max-w-md text-white/80">{t.form.intro}</p>
         {price && (
-          <p className="mt-3 text-xs text-white/60">
-            {t.hero.todayPrice}: <span className="font-medium text-white/85">{price}</span>
+          <p className="mt-3 text-base text-white/70">
+            {t.hero.todayPrice}: <span className="font-semibold text-white">{price}</span>
           </p>
         )}
       </div>

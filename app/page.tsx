@@ -56,8 +56,8 @@ export default async function HomePage() {
                 {t.hero.cta}
               </Link>
               {price && (
-                <p className="text-xs text-white/60">
-                  {t.hero.todayPrice}: <span className="font-medium text-white/85">{price}</span>
+                <p className="text-base text-white/70">
+                  {t.hero.todayPrice}: <span className="font-semibold text-white">{price}</span>
                 </p>
               )}
             </div>
