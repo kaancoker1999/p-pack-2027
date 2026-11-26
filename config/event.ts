@@ -28,7 +28,7 @@ export const event = {
   /** Parti kaç kişilik: admin panelindeki parti listesi bu kadar sıra gösterir (kaydı sınırlamaz) */
   capacity: 20,
   /** Kayıt formundaki "Referans kişisi" seçenekleri (yalnızca organizatörler) */
-  inviters: ['Derin Kılıç', 'Kaan Çoker', 'Metehan Buharalı', 'Elif Onur', 'Doğa Özilhan'],
+  inviters: ['Derin Kılıç', 'Kaan Çoker', 'Metehan Buharalı', 'Elif Onur'],
 
   minAge: 18,
   dressCode: 'New Year’s Concept',
