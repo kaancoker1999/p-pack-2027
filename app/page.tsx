@@ -20,9 +20,9 @@ export default async function HomePage() {
   // "Gece neler var" kartları: her birinin kendi hareketli görseli var.
   const highlights = [
     { scene: <OpenBarScene />, title: t.night.openBarTitle, text: t.night.openBarText },
-    { scene: <PartyScene className="h-44 sm:h-60 md:h-48" />, title: t.night.donerTitle, text: t.night.donerText },
     { scene: <DjScene />, title: t.night.djTitle, text: t.night.djText },
     { scene: <ElegantScene />, title: t.night.dressTitle, text: t.night.dressText },
+    { scene: <PartyScene className="h-44 sm:h-60 md:h-48" />, title: t.night.donerTitle, text: t.night.donerText },
   ];
 
   return (
