@@ -11,6 +11,7 @@ export const en: Dict = {
     eyebrow: 'New Year’s Eve',
     untilMorning: 'sunrise',
     cta: 'Sign Up',
+    todayPrice: 'Today’s price',
     countdownTitle: 'Countdown to 2027',
     days: 'Days',
     hours: 'Hours',

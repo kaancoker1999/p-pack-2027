@@ -30,6 +30,16 @@ export const event = {
   /** Kayıt formundaki "Referans kişisi" seçenekleri (yalnızca organizatörler) */
   inviters: ['Derin Kılıç', 'Kaan Çoker', 'Metehan Buharalı', 'Elif Onur'],
 
+  /**
+   * Kişi başı ücret: Türkçe sayfada TL, İngilizce sayfada euro. Sitede yalnızca o günün ücreti küçük bir satır olarak gösterilir;
+   * ödeme siteden alınmaz. Her kademe 'until' anına kadar geçerlidir (İstanbul saati).
+   */
+  prices: [
+    { until: '2026-12-10T00:00:00+03:00', TRY: 2000, EUR: 40 }, // 9 Aralık 23:59’a kadar
+    { until: '2026-12-25T00:00:00+03:00', TRY: 2500, EUR: 50 }, // 10–24 Aralık
+    { until: '2027-01-01T06:00:00+03:00', TRY: 3000, EUR: 60 }, // 25 Aralık’tan itibaren
+  ],
+
   minAge: 18,
   dressCode: 'New Year’s Concept',
 

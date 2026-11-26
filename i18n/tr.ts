@@ -9,6 +9,7 @@ export const tr = {
     eyebrow: 'Yılbaşı Gecesi',
     untilMorning: 'gün doğumu',
     cta: 'Kayıt Ol',
+    todayPrice: 'Bugünkü ücret',
     countdownTitle: '2027’ye kalan süre',
     days: 'Gün',
     hours: 'Saat',

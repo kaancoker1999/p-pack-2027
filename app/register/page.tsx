@@ -3,7 +3,7 @@ import { event } from '@/config/event';
 import { getI18n } from '@/i18n/server';
 import PageShell from '@/components/PageShell';
 import RegisterForm from '@/components/RegisterForm';
-import { formatEventDate } from '@/lib/format';
+import { formatEventDate, todaysPrice } from '@/lib/format';
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
@@ -12,6 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RegisterPage() {
   const { t, locale } = await getI18n();
+  const price = todaysPrice(locale);
   return (
     <PageShell t={t} locale={locale} width="max-w-xl">
       <div className="mb-8 text-center">
@@ -20,6 +21,11 @@ export default async function RegisterPage() {
           {event.name} · {formatEventDate(locale)} · {event.venue.name}
         </p>
         <p className="mx-auto mt-3 max-w-md text-white/80">{t.form.intro}</p>
+        {price && (
+          <p className="mt-3 text-xs text-white/60">
+            {t.hero.todayPrice}: <span className="font-medium text-white/85">{price}</span>
+          </p>
+        )}
       </div>
       <RegisterForm t={t} locale={locale} inviters={event.inviters} />
     </PageShell>

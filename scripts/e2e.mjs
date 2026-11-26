@@ -31,7 +31,8 @@ const reg = (over) => post('/api/register', { ...base, ...over });
 
 step('1. Sayfalar');
 const home = await page('/');
-check('ana sayfada "Kayıt Ol" var, fiyat ve bilet yok', home.includes('Kayıt Ol') && !/Early Bird|Bilet Al|₺/.test(home));
+check('ana sayfada "Kayıt Ol" var, bilet satışı yok', home.includes('Kayıt Ol') && !/Early Bird|Bilet Al/.test(home));
+check('ana sayfada yalnızca günün ücreti yazar (tek fiyat)', /Bugünkü ücret/.test(home) && new Set(home.match(/\d\.\d{3} ₺/g) ?? []).size === 1);
 const form = await page('/register');
 check('kayıt formu: isim, soyad, telefon, referans kişisi', ['İsim', 'Soyad', 'Telefon', 'Referans kişisi'].every((x) => form.includes(x)));
 check('referans listesinde yalnızca 4 organizatör', ['Derin Kılıç', 'Kaan Çoker', 'Metehan Buharalı', 'Elif Onur'].every((x) => form.includes(x)));

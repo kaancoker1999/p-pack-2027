@@ -8,7 +8,7 @@ import HeroVideo from '@/components/HeroVideo';
 import { DjScene, ElegantScene, OpenBarScene } from '@/components/NightScenes';
 import PartyScene from '@/components/PartyScene';
 import Reveal from '@/components/Reveal';
-import { formatDayMonth, formatEventDate, formatEventTime } from '@/lib/format';
+import { formatDayMonth, formatEventDate, formatEventTime, todaysPrice } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +16,7 @@ export default async function HomePage() {
   const { t, locale } = await getI18n();
   const countdownLabels = { days: t.hero.days, hours: t.hero.hours, minutes: t.hero.minutes, seconds: t.hero.seconds };
   const eventDate = formatEventDate(locale);
+  const price = todaysPrice(locale);
 
   // "Gece neler var" kartları: her birinin kendi hareketli görseli var.
   const highlights = [
@@ -54,6 +55,11 @@ export default async function HomePage() {
               <Link href="/register" className="btn-primary px-10 py-4 text-base">
                 {t.hero.cta}
               </Link>
+              {price && (
+                <p className="text-xs text-white/60">
+                  {t.hero.todayPrice}: <span className="font-medium text-white/85">{price}</span>
+                </p>
+              )}
             </div>
           </div>
         </section>

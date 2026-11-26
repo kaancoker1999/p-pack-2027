@@ -18,6 +18,13 @@ export function formatEventDate(locale: Locale): string {
   }).format(new Date(event.startsAt));
 }
 
+/** O an geçerli kişi başı ücret: TR "2.000 ₺", EN "€40". Etkinlik bittiyse null. */
+export function todaysPrice(locale: Locale, now: Date = new Date()): string | null {
+  const tier = event.prices.find((p) => now.getTime() < new Date(p.until).getTime());
+  if (!tier) return null;
+  return locale === 'tr' ? `${new Intl.NumberFormat('tr-TR').format(tier.TRY)} ₺` : `€${tier.EUR}`;
+}
+
 /** "22:00" */
 export function formatEventTime(): string {
   return new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: event.timeZone }).format(
