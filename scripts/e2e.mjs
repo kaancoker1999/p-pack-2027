@@ -35,7 +35,7 @@ check('ana sayfada "Kayıt Ol" var, bilet satışı yok', home.includes('Kayıt 
 check('ana sayfada yalnızca günün ücreti yazar (tek fiyat)', /Bugünkü ücret/.test(home) && new Set(home.match(/\d\.\d{3} ₺/g) ?? []).size === 1);
 const form = await page('/register');
 check('kayıt formu: isim, soyad, telefon, referans kişisi', ['İsim', 'Soyad', 'Telefon', 'Referans kişisi'].every((x) => form.includes(x)));
-check('referans listesinde yalnızca 4 organizatör', ['Derin Kılıç', 'Kaan Çoker', 'Metehan Buharalı', 'Elif Onur'].every((x) => form.includes(x)));
+check('referans listesinde yalnızca 5 organizatör', ['Derin Kılıç', 'Kaan Çoker', 'Metehan Buharalı', 'Elif Onur', 'Doğa Özilhan'].every((x) => form.includes(x)));
 const old = await fetch(`${BASE}/tickets`, { redirect: 'manual' });
 check('eski /tickets linki kayıt formuna yönlenir', [307, 308].includes(old.status) && (old.headers.get('location') ?? '').includes('/register'), String(old.status));
 for (const gone of ['/order/IST27-AAAA-AAAA', '/checkin', '/ticket/' + '0'.repeat(32)]) {

@@ -28,7 +28,7 @@ export const event = {
   /** Parti kaç kişilik: admin panelindeki parti listesi bu kadar sıra gösterir (kaydı sınırlamaz) */
   capacity: 20,
   /** Kayıt formundaki "Referans kişisi" seçenekleri (yalnızca organizatörler) */
-  inviters: ['Derin Kılıç', 'Kaan Çoker', 'Metehan Buharalı', 'Elif Onur'],
+  inviters: ['Derin Kılıç', 'Kaan Çoker', 'Metehan Buharalı', 'Elif Onur', 'Doğa Özilhan'],
 
   /**
    * Kişi başı ücret: Türkçe sayfada TL, İngilizce sayfada euro. Sitede yalnızca o günün ücreti küçük bir satır olarak gösterilir;
